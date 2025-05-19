@@ -366,7 +366,7 @@ const portfolioItems = [
     label: 'Maternity Shoot 7',
     category: 'Maternity Shoot'
   },
-//new born
+  // --- New Born (all images from folder) ---
   {
     thumbnail: 'image/New Born/SAVE_20250509_101639_compressed.jpg',
     image: 'image/New Born/SAVE_20250509_101639_compressed.jpg',
@@ -580,7 +580,7 @@ const portfolioItems = [
   }
 ];
 
-const categories = ['Baby Shoots', 'New Born', 'Maternity Shoot', 'Pre-Wedding', 'Engagement', 'Wedding', 'Festival'];
+const categories = ['Baby Shoots', 'New Born', 'Maternity Shoot', 'Festival'];
 const gallery = document.getElementById('gallery');
 const filterBar = document.getElementById('gallery-filter');
 
