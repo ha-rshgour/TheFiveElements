@@ -1,6 +1,6 @@
 // Loading state handling
 let pageLoaded = false;
-let minimumLoadTime = 5000; // 5 seconds in milliseconds
+let minimumLoadTime = 3000; // 5 seconds in milliseconds
 let startTime = Date.now();
 
 // Function to create loading animation container
@@ -606,15 +606,23 @@ function openLightbox(imgSrc) {
   lightbox.style.display = 'block';
   lightboxImg.src = imgSrc;
   lightboxCaption.textContent = '';
+  lightboxImg.classList.remove('zoomed');
 }
+
+// Add click event for zooming
+lightboxImg.addEventListener('click', function() {
+  this.classList.toggle('zoomed');
+});
 
 closeBtn.onclick = function() {
   lightbox.style.display = 'none';
+  lightboxImg.classList.remove('zoomed');
 }
 
 window.onclick = function(event) {
   if (event.target == lightbox) {
     lightbox.style.display = 'none';
+    lightboxImg.classList.remove('zoomed');
   }
 }
 

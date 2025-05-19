@@ -271,6 +271,13 @@ footer {
   box-shadow: 0 2px 16px rgba(0,0,0,0.3);
   object-fit: contain;
   transform: translate(0, 0);
+  cursor: zoom-in;
+  transition: transform 0.3s ease;
+}
+
+.lightbox-content.zoomed {
+  cursor: zoom-out;
+  transform: scale(1.5);
 }
 
 .close {
