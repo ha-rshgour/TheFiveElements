@@ -1,3 +1,205 @@
+// Loading state handling
+let pageLoaded = false;
+let minimumLoadTime = 5000; // 5 seconds in milliseconds
+let startTime = Date.now();
+
+// Function to create loading animation container
+function createLoadingAnimation(container) {
+  const loadingDiv = document.createElement('div');
+  loadingDiv.className = 'image-loading-animation';
+  
+  const loaderImg = document.createElement('img');
+  loaderImg.src = 'image/Image loader.gif';
+  loaderImg.alt = 'Loading...';
+  loaderImg.className = 'loader-gif';
+  
+  loadingDiv.appendChild(loaderImg);
+  container.appendChild(loadingDiv);
+  
+  return loadingDiv;
+}
+
+// Cache for loaded images
+const imageCache = new Map();
+
+// Function to preload images
+function preloadImage(src) {
+  if (imageCache.has(src)) {
+    return Promise.resolve(imageCache.get(src));
+  }
+
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      imageCache.set(src, img);
+      resolve(img);
+    };
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+
+// Function to render gallery items in chunks
+async function renderGalleryChunk(items, startIndex, chunkSize) {
+  const endIndex = Math.min(startIndex + chunkSize, items.length);
+  const fragment = document.createDocumentFragment();
+
+  for (let i = startIndex; i < endIndex; i++) {
+    const item = items[i];
+    const div = document.createElement('div');
+    div.className = 'item';
+    
+    // Create and add loading animation first
+    const loadingAnimation = createLoadingAnimation(div);
+    
+    const img = document.createElement('img');
+    img.className = 'gallery-image';
+    img.alt = item.label || '';
+    
+    // Load image directly
+    img.onload = function() {
+      this.classList.add('loaded');
+      loadingAnimation.style.opacity = '0';
+      setTimeout(() => {
+        loadingAnimation.remove();
+      }, 300);
+    };
+    
+    img.onerror = function() {
+      this.src = 'image/placeholder.jpg';
+      loadingAnimation.remove();
+    };
+    
+    // Set the image source
+    img.src = item.thumbnail || item.image;
+    
+    div.appendChild(img);
+    div.addEventListener('click', () => openLightbox(item.image));
+    fragment.appendChild(div);
+  }
+
+  gallery.appendChild(fragment);
+  return endIndex;
+}
+
+async function renderGallery(selectedCategory = 'All') {
+  gallery.innerHTML = '';
+
+  let itemsToShow;
+  if (selectedCategory === 'All') {
+    itemsToShow = portfolioItems.filter(item =>
+      ['Baby Shoots', 'New Born', 'Maternity Shoot'].includes(item.category)
+    );
+  } else {
+    itemsToShow = portfolioItems.filter(item => item.category === selectedCategory);
+  }
+
+  // Shuffle array for 'All' category
+  if (selectedCategory === 'All') {
+    for (let i = itemsToShow.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [itemsToShow[i], itemsToShow[j]] = [itemsToShow[j], itemsToShow[i]];
+    }
+  }
+
+  // Render all items but initially hide those beyond the first 6
+  for (let i = 0; i < itemsToShow.length; i++) {
+    const item = itemsToShow[i];
+    const div = document.createElement('div');
+    div.className = 'item';
+    
+    // Hide items beyond first 6 for 'All' category
+    if (selectedCategory === 'All' && i >= 6) {
+      div.style.display = 'none';
+    }
+    
+    // Create and add loading animation first
+    const loadingAnimation = createLoadingAnimation(div);
+    
+    const img = document.createElement('img');
+    img.className = 'gallery-image';
+    img.alt = item.label || '';
+    
+    // Load image directly
+    img.onload = function() {
+      this.classList.add('loaded');
+      loadingAnimation.style.opacity = '0';
+      setTimeout(() => {
+        loadingAnimation.remove();
+      }, 300);
+    };
+    
+    img.onerror = function() {
+      this.src = 'image/placeholder.jpg';
+      loadingAnimation.remove();
+    };
+    
+    // Set the image source
+    img.src = item.thumbnail || item.image;
+    
+    div.appendChild(img);
+    div.addEventListener('click', () => openLightbox(item.image));
+    gallery.appendChild(div);
+  }
+
+  // Update show more button visibility
+  const showMoreBtn = document.getElementById('show-more-btn');
+  if (showMoreBtn) {
+    showMoreBtn.style.display = (selectedCategory === 'All' && itemsToShow.length > 6) ? 'block' : 'none';
+  }
+
+  // Reset expanded state when changing categories
+  if (selectedCategory !== 'All') {
+    isExpanded = false;
+    if (showMoreBtn) {
+      showMoreBtn.textContent = 'Show More';
+    }
+  }
+}
+
+// Optimize image loading with Intersection Observer
+const imageObserver = new IntersectionObserver((entries, observer) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const img = entry.target;
+      if (img.dataset.src) {
+        preloadImage(img.dataset.src).then(() => {
+          img.src = img.dataset.src;
+          img.removeAttribute('data-src');
+        }).catch(() => {
+          img.src = 'image/placeholder.jpg';
+        });
+        observer.unobserve(img);
+      }
+    }
+  });
+}, {
+  rootMargin: '50px 0px',
+  threshold: 0.01
+});
+
+function loadVisibleImages() {
+  const images = document.querySelectorAll('img[data-src]');
+  images.forEach(img => imageObserver.observe(img));
+}
+
+window.addEventListener('load', function() {
+  pageLoaded = true;
+  const currentTime = Date.now();
+  const elapsedTime = currentTime - startTime;
+  const remainingTime = Math.max(0, minimumLoadTime - elapsedTime);
+
+  setTimeout(() => {
+    const loadingOverlay = document.getElementById('loading-overlay');
+    if (loadingOverlay) {
+      loadingOverlay.style.opacity = '0';
+      setTimeout(() => {
+        loadingOverlay.style.display = 'none';
+      }, 500);
+    }
+  }, remainingTime);
+});
+
 // Portfolio items data
 const portfolioItems = [
   // --- Baby Shoots (all images from folder) ---
@@ -317,27 +519,9 @@ const portfolioItems = [
     category: 'Festival'
   },
   {
-    thumbnail: 'image/festival/P1138406_compressed.jpg',
-    image: 'image/festival/P1138406_compressed.jpg',
-    label: 'Festival 6',
-    category: 'Festival'
-  },
-  {
     thumbnail: 'image/festival/P1138409_compressed.jpg',
     image: 'image/festival/P1138409_compressed.jpg',
     label: 'Festival 7',
-    category: 'Festival'
-  },
-  {
-    thumbnail: 'image/festival/P1138934 copy_compressed.jpg',
-    image: 'image/festival/P1138934 copy_compressed.jpg',
-    label: 'Festival 8',
-    category: 'Festival'
-  },
-  {
-    thumbnail: 'image/festival/P1138934-1_compressed.jpg',
-    image: 'image/festival/P1138934-1_compressed.jpg',
-    label: 'Festival 9',
     category: 'Festival'
   },
   {
@@ -399,62 +583,6 @@ const portfolioItems = [
 const categories = ['Baby Shoots', 'New Born', 'Maternity Shoot', 'Pre-Wedding', 'Engagement', 'Wedding', 'Festival'];
 const gallery = document.getElementById('gallery');
 const filterBar = document.getElementById('gallery-filter');
-
-function renderGallery(selectedCategory = 'All') {
-  gallery.innerHTML = '';
-
-  let itemsToShow;
-  if (selectedCategory === 'All') {
-    itemsToShow = portfolioItems.filter(item =>
-      ['Baby Shoots', 'New Born', 'Maternity Shoot'].includes(item.category)
-    );
-  } else {
-    itemsToShow = portfolioItems.filter(item => item.category === selectedCategory);
-  }
-
-  // Shuffle array for 'All' category
-  if (selectedCategory === 'All') {
-    for (let i = itemsToShow.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [itemsToShow[i], itemsToShow[j]] = [itemsToShow[j], itemsToShow[i]];
-    }
-  }
-
-  itemsToShow.forEach((item, index) => {
-    const div = document.createElement('div');
-    div.className = 'item';
-    
-    // Only hide items beyond 6 for 'All' category
-    if (selectedCategory === 'All' && index >= 6) {
-      div.style.display = 'none';
-    } else {
-      div.style.display = 'block';
-    }
-    
-    const img = document.createElement('img');
-    img.src = item.thumbnail || item.image;
-    img.alt = item.label || '';
-    img.loading = 'lazy';
-    
-    div.appendChild(img);
-    div.addEventListener('click', () => openLightbox(item.image));
-    gallery.appendChild(div);
-  });
-
-  // Update show more button visibility - only show for 'All' category
-  const showMoreBtn = document.getElementById('show-more-btn');
-  if (showMoreBtn) {
-    showMoreBtn.style.display = (selectedCategory === 'All' && itemsToShow.length > 6) ? 'block' : 'none';
-  }
-
-  // Reset expanded state when changing categories
-  if (selectedCategory !== 'All') {
-    isExpanded = false;
-  }
-}
-
-// Initial render
-renderGallery();
 
 // Filter bar event
 filterBar.addEventListener('click', (e) => {
@@ -562,3 +690,6 @@ if (showMoreBtn) {
     updateGalleryDisplay();
   });
 }
+
+// Initial render
+renderGallery();

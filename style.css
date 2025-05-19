@@ -1,3 +1,13 @@
+:root {
+  --primary-bg: #f2f2f2;
+  --secondary-bg: #eae4d5;
+  --accent-color: #b6b09f;
+  --text-color: #000000;
+  --hover-color: #b6b09f;
+  --card-bg: #ffffff;
+  --shadow-color: rgba(0, 0, 0, 0.1);
+}
+
 html {
   scroll-behavior: smooth;
   overflow-x: hidden;
@@ -6,19 +16,19 @@ html {
 
 body {
   font-family: 'Helvetica Neue', Arial, sans-serif;
-  background: #fff;
+  background: var(--primary-bg);
   margin: 0;
-  color: #222;
+  color: var(--text-color);
   overflow-x: hidden;
   width: 100%;
   position: relative;
 }
 
 header {
-  background: #fff;
+  background: var(--card-bg);
   padding: 0;
   text-align: center;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--accent-color);
   margin: 0;
 }
 
@@ -33,12 +43,13 @@ header h1 {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #fff;
+  background: var(--card-bg);
   padding: 0.3rem 1.2rem;
   min-height: 44px;
   position: relative;
   z-index: 200;
   margin: 0;
+  border-bottom: 1px solid var(--accent-color);
 }
 
 .logo {
@@ -69,7 +80,7 @@ header h1 {
 
 .main-nav a {
   text-decoration: none;
-  color: #222;
+  color: var(--text-color);
   font-weight: 500;
   font-size: 1rem;
   transition: color 0.2s, background 0.2s;
@@ -78,11 +89,12 @@ header h1 {
 }
 
 .main-nav a:hover {
-  color: #fff;
-  background: #ff6f61;
+  color: var(--card-bg);
+  background: var(--accent-color);
 }
 
 .welcome {
+  background-color: var(--secondary-bg);
   background-image: url('image/SAVE_20240725_190318.jpg');
   background-size: cover;
   background-position: center;
@@ -96,18 +108,38 @@ header h1 {
   justify-content: center;
   align-items: center;
   text-align: center;
+  position: relative;
 }
 
 .welcome h2 {
   margin-top: 0;
   font-size: 2rem;
-  color: #222;
+  color: var(--text-color);
 }
 
 .welcome p {
   color: #666;
   font-size: 1.1rem;
   margin-top: 1rem;
+}
+
+#loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(242, 242, 242, 0.95);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  transition: opacity 0.5s ease-out;
+}
+
+.loading-animation {
+  width: 200px;
+  height: auto;
 }
 
 .gallery {
@@ -118,26 +150,25 @@ header h1 {
   padding: 2rem;
 }
 
-/* Remove .gallery-items column-count and related styles */
-.gallery-items {
-  display: contents;
-  padding: 0;
-  margin: 0;
-}
-
 .item {
   display: block;
   width: 100%;
   margin-bottom: 2rem;
-  background: #fff;
+  background: var(--card-bg);
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  box-shadow: 0 2px 8px var(--shadow-color);
   overflow: hidden;
   text-align: center;
   padding: 0;
   cursor: pointer;
   transition: box-shadow 0.2s;
   break-inside: avoid;
+  position: relative;
+  min-height: 200px;
+}
+
+.item:hover {
+  box-shadow: 0 4px 12px var(--shadow-color);
 }
 
 .item img {
@@ -149,12 +180,57 @@ header h1 {
   transition: transform 0.2s;
   height: auto;
   object-fit: cover;
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 .item p {
   margin: 1rem 0 0 0;
   font-size: 1rem;
   color: #888;
+}
+
+.image-loading-animation {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 60px;
+  height: 60px;
+  z-index: 10;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 50%;
+  padding: 15px;
+  box-shadow: 0 2px 10px var(--shadow-color);
+  transition: opacity 0.3s ease-out;
+}
+
+.loader-gif {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.gallery-image {
+  width: 100%;
+  display: block;
+  border-radius: 8px;
+  margin: 0;
+  padding: 0;
+  transition: opacity 0.3s ease;
+  height: auto;
+  object-fit: cover;
+  opacity: 0;
+  min-height: 200px;
+  background: var(--secondary-bg);
+}
+
+.gallery-image.loaded {
+  opacity: 1;
 }
 
 footer {
@@ -170,63 +246,92 @@ footer {
   display: none;
   position: fixed;
   z-index: 1000;
-  padding-top: 60px;
   left: 0;
   top: 0;
-  width: 100vw;
-  height: 100vh;
-  overflow: auto;
-  background: rgba(0,0,0,0.85);
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.9);
+  padding: 0;
+  margin: 0;
+}
+
+.lightbox.active {
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .lightbox-content {
+  position: relative;
+  max-width: 90%;
+  max-height: 90%;
   margin: auto;
   display: block;
-  max-width: 80vw;
-  max-height: 80vh;
   border-radius: 10px;
   box-shadow: 0 2px 16px rgba(0,0,0,0.3);
+  object-fit: contain;
+  transform: translate(0, 0);
 }
 
 .close {
-  position: absolute;
-  top: 30px;
-  right: 50px;
+  display: none;
+  position: fixed;
+  top: 20px;
+  right: 30px;
   color: #fff;
   font-size: 40px;
   font-weight: bold;
   cursor: pointer;
   transition: color 0.2s;
+  z-index: 1001;
+  background: none;
+  border: none;
+  padding: 0;
 }
 
-.close:hover {
-  color: #ff6f61;
+.lightbox.active .close {
+  display: block;
 }
 
 #lightbox-caption {
+  display: none;
+  position: fixed;
+  bottom: 20px;
+  left: 0;
+  right: 0;
   color: #fff;
   text-align: center;
-  margin-top: 1rem;
   font-size: 1.2rem;
+  padding: 0 20px;
+  z-index: 1001;
+}
+
+.lightbox.active #lightbox-caption {
+  display: block;
 }
 
 @media (max-width: 900px) {
   .main-nav {
     padding: 0.2rem 0.7rem;
   }
+  
   .logo {
     font-size: 1.1rem;
     margin-right: 0.7rem;
   }
+  
+  .logo img {
+    height: 100px;
+    margin-top: -15px;
+    margin-bottom: -30px;
+  }
+  
   .welcome {
-    padding: 0;
-    max-width: 100%;
     height: 25rem;
-    background-size: contain;
+    background-size: cover;
     background-position: center;
   }
   .gallery {
-    display: block;
     column-count: 2;
     column-gap: 1rem;
     padding: 1rem;
@@ -258,28 +363,33 @@ footer {
 
 @media (max-width: 600px) {
   .main-nav {
-    flex-direction: row;
-    align-items: center;
     padding: 0.2rem 0.4rem;
-    height: auto;
-    min-height: 44px;
-    width: 100%;
-    box-sizing: border-box;
+    min-height: 40px;
   }
+  
   .logo {
     font-size: 1rem;
     margin-bottom: 0;
     margin-right: 0.3rem;
   }
+  
+  .logo img {
+    height: 80px;
+    margin-top: -10px;
+    margin-bottom: -20px;
+  }
+  
   .welcome {
     height: 20rem;
-    background-size: contain;
-    background-position: center;
     margin-top: 0;
+    background-size: cover;
+    background-position: center;
   }
+  
   .welcome h2 {
     font-size: 1.2rem;
   }
+  
   .welcome p {
     font-size: 1rem;
   }
@@ -315,17 +425,37 @@ footer {
   .item {
     padding: 0.7rem;
   }
+  .lightbox.active {
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+  }
   .lightbox-content {
-    max-width: 95vw;
-    max-height: 60vh;
+    max-width: 95%;
+    max-height: 80%;
+    margin: auto;
+    position: relative;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    object-fit: contain;
   }
   .close {
     top: 10px;
-    right: 20px;
+    right: 15px;
     font-size: 30px;
   }
   #lightbox-caption {
     font-size: 1rem;
+    bottom: 10px;
   }
   .hamburger {
     display: flex;
@@ -338,14 +468,14 @@ footer {
     gap: 0.5rem;
     margin-top: 0;
     width: 100%;
-    background: #fff;
+    background: var(--card-bg);
     position: absolute;
     top: 100%;
     left: 0;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.10);
+    box-shadow: 0 8px 24px var(--shadow-color);
     border-bottom-left-radius: 12px;
     border-bottom-right-radius: 12px;
-    padding: 0.7rem 0.7rem 0.7rem 0.7rem;
+    padding: 0.7rem;
     transition: all 0.3s ease;
     z-index: 250;
   }
@@ -355,6 +485,8 @@ footer {
   .main-nav a {
     font-size: 0.98rem;
     padding: 0.5rem 0.3rem;
+    display: block;
+    width: 100%;
   }
   .services {
     padding: 2rem 1rem;
@@ -433,9 +565,9 @@ footer {
   flex-wrap: wrap;
 }
 .gallery-filter button {
-  background: #fff;
-  border: 1px solid #ff6f61;
-  color: #ff6f61;
+  background: var(--card-bg);
+  border: 1px solid var(--accent-color);
+  color: var(--text-color);
   padding: 0.5rem 1.2rem;
   border-radius: 20px;
   font-size: 1rem;
@@ -444,14 +576,14 @@ footer {
 }
 .gallery-filter button.active,
 .gallery-filter button:hover {
-  background: #ff6f61;
-  color: #fff;
+  background: var(--accent-color);
+  color: var(--card-bg);
 }
 
 /* Services Section */
 .services {
   padding: 4rem 2rem;
-  background: #fff;
+  background: var(--primary-bg);
 }
 
 .services h2 {
@@ -470,15 +602,16 @@ footer {
 }
 
 .service-card {
-  background: #fff;
+  background: var(--card-bg);
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 16px var(--shadow-color);
   transition: transform 0.3s ease;
 }
 
 .service-card:hover {
   transform: translateY(-5px);
+  box-shadow: 0 6px 20px var(--shadow-color);
 }
 
 .service-card img {
@@ -502,7 +635,7 @@ footer {
 /* About Section */
 .about {
   padding: 4rem 2rem;
-  background: #f9f9f9;
+  background: var(--secondary-bg);
 }
 
 .about-content {
@@ -534,7 +667,7 @@ footer {
 }
 
 .feature h3 {
-  color: #ff6f61;
+  color: var(--accent-color);
   margin-bottom: 0.5rem;
   font-size: 1.2rem;
 }
@@ -615,8 +748,8 @@ footer {
 
 .show-more-btn {
   padding: 10px 20px;
-  background-color: #ff6f61;
-  color: white;
+  background-color: var(--accent-color);
+  color: var(--card-bg);
   border: none;
   border-radius: 5px;
   cursor: pointer;
@@ -626,7 +759,7 @@ footer {
 }
 
 .show-more-btn:hover {
-  background-color: #ff5242;
+  background-color: var(--text-color);
 }
 
 .gallery-item {
