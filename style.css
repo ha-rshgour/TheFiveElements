@@ -673,7 +673,6 @@ footer {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 2rem;
-  max-width: 1200px;
   margin: 0 auto;
 }
 
@@ -716,7 +715,6 @@ footer {
 }
 
 .about-content {
-  max-width: 1200px;
   margin: 0 auto;
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -862,7 +860,6 @@ footer {
 }
 
 .location-container {
-  max-width: 1200px;
   margin: 0 auto;
   display: grid;
   grid-template-columns: 1fr 1fr;
