@@ -55,6 +55,7 @@ async function renderGalleryChunk(items, startIndex, chunkSize) {
     const img = document.createElement('img');
     img.className = 'gallery-image';
     img.alt = item.label || '';
+    img.loading = 'lazy'; // Add lazy loading
     
     // Load image directly
     img.onload = function() {
@@ -82,6 +83,7 @@ async function renderGalleryChunk(items, startIndex, chunkSize) {
   return endIndex;
 }
 
+// Optimize initial gallery render
 async function renderGallery(selectedCategory = 'All') {
   gallery.innerHTML = '';
 
@@ -102,7 +104,7 @@ async function renderGallery(selectedCategory = 'All') {
     }
   }
 
-  // Render all items but initially hide those beyond the first 6
+  // Render all items but initially hide those beyond the first 6 for 'All' category
   for (let i = 0; i < itemsToShow.length; i++) {
     const item = itemsToShow[i];
     const div = document.createElement('div');
@@ -113,14 +115,13 @@ async function renderGallery(selectedCategory = 'All') {
       div.style.display = 'none';
     }
     
-    // Create and add loading animation first
     const loadingAnimation = createLoadingAnimation(div);
     
     const img = document.createElement('img');
     img.className = 'gallery-image';
     img.alt = item.label || '';
+    img.loading = 'lazy';
     
-    // Load image directly
     img.onload = function() {
       this.classList.add('loaded');
       loadingAnimation.style.opacity = '0';
@@ -134,7 +135,6 @@ async function renderGallery(selectedCategory = 'All') {
       loadingAnimation.remove();
     };
     
-    // Set the image source
     img.src = item.thumbnail || item.image;
     
     div.appendChild(img);
@@ -142,17 +142,18 @@ async function renderGallery(selectedCategory = 'All') {
     gallery.appendChild(div);
   }
 
-  // Update show more button visibility
-  const showMoreBtn = document.getElementById('show-more-btn');
-  if (showMoreBtn) {
-    showMoreBtn.style.display = (selectedCategory === 'All' && itemsToShow.length > 6) ? 'block' : 'none';
-  }
-
   // Reset expanded state when changing categories
   if (selectedCategory !== 'All') {
     isExpanded = false;
-    if (showMoreBtn) {
-      showMoreBtn.textContent = 'Show More';
+  }
+
+  // Update show more button visibility and text
+  if (showMoreBtn) {
+    if (selectedCategory === 'All' && itemsToShow.length > 6) {
+      showMoreBtn.style.display = 'block';
+      showMoreBtn.textContent = isExpanded ? 'Show Less' : 'Show More';
+    } else {
+      showMoreBtn.style.display = 'none';
     }
   }
 }
@@ -671,21 +672,28 @@ function updateGalleryDisplay() {
   const items = document.querySelectorAll('.item');
   const selectedCategory = document.querySelector('.gallery-filter button.active').dataset.category;
   
-  items.forEach((item, index) => {
-    if (selectedCategory === 'All') {
+  if (selectedCategory === 'All') {
+    items.forEach((item, index) => {
       if (isExpanded || index < 6) {
         item.style.display = 'block';
       } else {
         item.style.display = 'none';
       }
-    } else {
+    });
+  } else {
+    items.forEach(item => {
       item.style.display = 'block';
-    }
-  });
+    });
+  }
 
-  // Update button text
+  // Update button text and visibility
   if (showMoreBtn) {
-    showMoreBtn.textContent = isExpanded ? 'Show Less' : 'Show More';
+    if (selectedCategory === 'All' && items.length > 6) {
+      showMoreBtn.style.display = 'block';
+      showMoreBtn.textContent = isExpanded ? 'Show Less' : 'Show More';
+    } else {
+      showMoreBtn.style.display = 'none';
+    }
   }
 }
 
