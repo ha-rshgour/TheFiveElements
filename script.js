@@ -122,20 +122,26 @@ async function renderGallery(selectedCategory = 'All') {
     img.alt = item.label || '';
     img.loading = 'lazy';
     
-    img.onload = function() {
-      this.classList.add('loaded');
-      loadingAnimation.style.opacity = '0';
-      setTimeout(() => {
-        loadingAnimation.remove();
-      }, 300);
-    };
-    
-    img.onerror = function() {
-      this.src = 'image/placeholder.jpg';
-      loadingAnimation.remove();
-    };
-    
-    img.src = item.thumbnail || item.image;
+    // Preload image before adding to DOM
+    try {
+      const preloadedImg = await preloadImage(item.thumbnail || item.image);
+      if (preloadedImg.complete && preloadedImg.naturalHeight !== 0) {
+        img.src = item.thumbnail || item.image;
+        img.classList.add('loaded');
+        loadingAnimation.style.opacity = '0';
+        setTimeout(() => {
+          loadingAnimation.remove();
+        }, 300);
+      } else {
+        // Skip this item if image is invalid
+        div.remove();
+        continue;
+      }
+    } catch (error) {
+      // Skip this item if image fails to load
+      div.remove();
+      continue;
+    }
     
     div.appendChild(img);
     div.addEventListener('click', () => openLightbox(item.image));
