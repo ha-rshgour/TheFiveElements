@@ -330,6 +330,25 @@ const portfolioItems = [
     label: 'Baby Shoot 20',
     category: 'Baby Shoots'
   },
+  // --- Add more Baby Shoots images here ---
+  {
+    thumbnail: 'image/placeholder_bs_1_thumb.jpg',
+    image: 'image/placeholder_bs_1_full.jpg',
+    label: 'Baby Shoot 21 (Placeholder)',
+    category: 'Baby Shoots'
+  },
+  {
+    thumbnail: 'image/placeholder_bs_2_thumb.jpg',
+    image: 'image/placeholder_bs_2_full.jpg',
+    label: 'Baby Shoot 22 (Placeholder)',
+    category: 'Baby Shoots'
+  },
+  {
+    thumbnail: 'image/placeholder_bs_3_thumb.jpg',
+    image: 'image/placeholder_bs_3_full.jpg',
+    label: 'Baby Shoot 23 (Placeholder)',
+    category: 'Baby Shoots'
+  },
   // --- Maternity Shoot (all images from folder) ---
   {
     thumbnail: 'image/Maternity Shoot/SAVE_20240924_133845.jpg',
