@@ -1,6 +1,6 @@
 // Loading state handling
 let pageLoaded = false;
-let minimumLoadTime = 3000; // 5 seconds in milliseconds
+let minimumLoadTime = 2000; // 2 seconds in milliseconds
 let startTime = Date.now();
 
 // Function to create loading animation container
