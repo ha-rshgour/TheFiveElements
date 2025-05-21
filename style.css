@@ -22,7 +22,6 @@ body {
   overflow-x: hidden;
   width: 100%;
   position: relative;
-  max-width: 1920px;
   margin: 0 auto;
 }
 
@@ -52,7 +51,6 @@ header h1 {
   z-index: 200;
   margin: 0;
   border-bottom: 1px solid var(--accent-color);
-  max-width: 1920px;
   margin: 0 auto;
 }
 
@@ -155,7 +153,6 @@ header h1 {
 .gallery {
   column-count: 4;
   column-gap: 2rem;
-  max-width: 1600px;
   margin: 3rem auto;
   padding: 2rem;
   width: 100%;
@@ -188,7 +185,7 @@ header h1 {
 
 .item img {
   width: 100%;
-  height: auto;
+  height: 100%;
   display: block;
   border-radius: 8px;
   margin: 0;
@@ -661,7 +658,6 @@ footer {
 /* Services Section */
 .services {
   padding: 4rem 2rem;
-  max-width: 1600px;
   margin: 0 auto;
   background: var(--primary-bg);
 }
@@ -715,7 +711,6 @@ footer {
 /* About Section */
 .about {
   padding: 4rem 2rem;
-  max-width: 1600px;
   margin: 0 auto;
   background: var(--secondary-bg);
 }
@@ -855,7 +850,6 @@ footer {
 /* Location Section Styles */
 .location {
   padding: 4rem 2rem;
-  max-width: 1600px;
   margin: 0 auto;
   background: var(--primary-bg);
 }
