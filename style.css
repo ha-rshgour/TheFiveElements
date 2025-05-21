@@ -22,6 +22,8 @@ body {
   overflow-x: hidden;
   width: 100%;
   position: relative;
+  max-width: 1920px;
+  margin: 0 auto;
 }
 
 header {
@@ -50,6 +52,8 @@ header h1 {
   z-index: 200;
   margin: 0;
   border-bottom: 1px solid var(--accent-color);
+  max-width: 1920px;
+  margin: 0 auto;
 }
 
 .logo {
@@ -145,7 +149,7 @@ header h1 {
 .gallery {
   column-count: 4;
   column-gap: 2rem;
-  max-width: 1200px;
+  max-width: 1600px;
   margin: 3rem auto;
   padding: 2rem;
 }
@@ -689,6 +693,8 @@ footer {
 /* Services Section */
 .services {
   padding: 4rem 2rem;
+  max-width: 1600px;
+  margin: 0 auto;
   background: var(--primary-bg);
 }
 
@@ -741,6 +747,8 @@ footer {
 /* About Section */
 .about {
   padding: 4rem 2rem;
+  max-width: 1600px;
+  margin: 0 auto;
   background: var(--secondary-bg);
 }
 
@@ -879,6 +887,8 @@ footer {
 /* Location Section Styles */
 .location {
   padding: 4rem 2rem;
+  max-width: 1600px;
+  margin: 0 auto;
   background: var(--primary-bg);
 }
 
@@ -989,5 +999,43 @@ footer {
   
   .info-item p {
     font-size: 1rem;
+  }
+}
+
+@media (min-width: 1600px) {
+  .gallery {
+    column-count: 5;
+  }
+  
+  .services-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 3rem;
+  }
+  
+  .about-content {
+    gap: 4rem;
+  }
+  
+  .location-container {
+    gap: 4rem;
+  }
+}
+
+@media (min-width: 1920px) {
+  .gallery {
+    column-count: 6;
+  }
+  
+  .services-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4rem;
+  }
+  
+  .about-content {
+    gap: 6rem;
+  }
+  
+  .location-container {
+    gap: 6rem;
   }
 }
