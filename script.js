@@ -19,68 +19,14 @@ function createLoadingAnimation(container) {
   return loadingDiv;
 }
 
-// Cache for loaded images
-const imageCache = new Map();
-
 // Function to preload images
 function preloadImage(src) {
-  if (imageCache.has(src)) {
-    return Promise.resolve(imageCache.get(src));
-  }
-
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.onload = () => {
-      imageCache.set(src, img);
-      resolve(img);
-    };
-    img.onerror = reject;
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
     img.src = src;
   });
-}
-
-// Function to render gallery items in chunks
-async function renderGalleryChunk(items, startIndex, chunkSize) {
-  const endIndex = Math.min(startIndex + chunkSize, items.length);
-  const fragment = document.createDocumentFragment();
-
-  for (let i = startIndex; i < endIndex; i++) {
-    const item = items[i];
-    const div = document.createElement('div');
-    div.className = 'item';
-    
-    // Create and add loading animation first
-    const loadingAnimation = createLoadingAnimation(div);
-    
-    const img = document.createElement('img');
-    img.className = 'gallery-image';
-    img.alt = item.label || '';
-    img.loading = 'lazy'; // Add lazy loading
-    
-    // Load image directly
-    img.onload = function() {
-      this.classList.add('loaded');
-      loadingAnimation.style.opacity = '0';
-      setTimeout(() => {
-        loadingAnimation.remove();
-      }, 300);
-    };
-    
-    img.onerror = function() {
-      this.src = 'image/placeholder.jpg';
-      loadingAnimation.remove();
-    };
-    
-    // Set the image source
-    img.src = item.thumbnail || item.image;
-    
-    div.appendChild(img);
-    div.addEventListener('click', () => openLightbox(item.image));
-    fragment.appendChild(div);
-  }
-
-  gallery.appendChild(fragment);
-  return endIndex;
 }
 
 // Optimize initial gallery render
@@ -104,25 +50,25 @@ async function renderGallery(selectedCategory = 'All') {
     }
   }
 
-  // Render only first 6 items initially for better performance
-  const initialItems = selectedCategory === 'All' ? itemsToShow.slice(0, 6) : itemsToShow;
-  
-  for (let i = 0; i < initialItems.length; i++) {
-    const item = initialItems[i];
+  // Render all items initially
+  for (let i = 0; i < itemsToShow.length; i++) {
+    const item = itemsToShow[i];
     const div = document.createElement('div');
     div.className = 'item';
     
+    // Create and add loading animation
     const loadingAnimation = createLoadingAnimation(div);
     
     const img = document.createElement('img');
     img.className = 'gallery-image';
     img.alt = item.label || '';
+    // Use native lazy loading
     img.loading = 'lazy';
-    img.decoding = 'async';
     
-    // Use data-src for lazy loading
-    img.dataset.src = item.thumbnail || item.image;
+    // Set the image source
+    img.src = item.thumbnail || item.image;
     
+    // Handle image load success
     img.onload = function() {
       this.classList.add('loaded');
       loadingAnimation.style.opacity = '0';
@@ -131,25 +77,24 @@ async function renderGallery(selectedCategory = 'All') {
       }, 300);
     };
     
+    // Handle image load error
     img.onerror = function() {
-      this.src = 'image/placeholder.jpg';
-      loadingAnimation.remove();
+      console.error('Error loading image:', this.src);
+      this.src = 'image/placeholder.jpg'; // Fallback to placeholder
+      this.classList.add('loaded'); // Still mark as loaded to show placeholder
+      loadingAnimation.style.opacity = '0';
+      setTimeout(() => {
+        loadingAnimation.remove();
+      }, 300);
     };
     
     div.appendChild(img);
-    div.addEventListener('click', () => openLightbox(item.image));
+    div.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      openLightbox(item.image);
+    });
     gallery.appendChild(div);
-  }
-
-  // Load remaining items in chunks
-  if (selectedCategory === 'All' && itemsToShow.length > 6) {
-    const remainingItems = itemsToShow.slice(6);
-    const chunkSize = 6;
-    
-    for (let i = 0; i < remainingItems.length; i += chunkSize) {
-      const chunk = remainingItems.slice(i, i + chunkSize);
-      await renderGalleryChunk(chunk, i, chunkSize);
-    }
   }
 
   // Reset expanded state when changing categories
@@ -166,35 +111,10 @@ async function renderGallery(selectedCategory = 'All') {
       showMoreBtn.style.display = 'none';
     }
   }
+
+  // Update gallery display after rendering
+  updateGalleryDisplay();
 }
-
-// Optimize image loading with Intersection Observer
-const imageObserver = new IntersectionObserver((entries, observer) => {
-  entries.forEach(entry => {
-    if (entry.isIntersecting) {
-      const img = entry.target;
-      if (img.dataset.src) {
-        img.src = img.dataset.src;
-        img.removeAttribute('data-src');
-        observer.unobserve(img);
-      }
-    }
-  });
-}, {
-  rootMargin: '100px 0px',
-  threshold: 0.1
-});
-
-// Initialize Intersection Observer for lazy loading
-function initializeLazyLoading() {
-  const images = document.querySelectorAll('img[data-src]');
-  images.forEach(img => imageObserver.observe(img));
-}
-
-// Call initializeLazyLoading after initial render
-renderGallery().then(() => {
-  initializeLazyLoading();
-});
 
 window.addEventListener('load', function() {
   pageLoaded = true;
@@ -271,12 +191,6 @@ const portfolioItems = [
     category: 'Baby Shoots'
   },
   {
-    thumbnail: 'image/Baby Shoots/SAVE_20250205_130129-min.jpg',
-    image: 'image/Baby Shoots/SAVE_20250205_130129-min.jpg',
-    label: 'Baby Shoot 10',
-    category: 'Baby Shoots'
-  },
-  {
     thumbnail: 'image/Baby Shoots/SAVE_20250206_081640-min.jpg',
     image: 'image/Baby Shoots/SAVE_20250206_081640-min.jpg',
     label: 'Baby Shoot 11',
@@ -336,25 +250,6 @@ const portfolioItems = [
     label: 'Baby Shoot 20',
     category: 'Baby Shoots'
   },
-  // --- Add more Baby Shoots images here ---
-  {
-    thumbnail: 'image/placeholder_bs_1_thumb.jpg',
-    image: 'image/placeholder_bs_1_full.jpg',
-    label: 'Baby Shoot 21 (Placeholder)',
-    category: 'Baby Shoots'
-  },
-  {
-    thumbnail: 'image/placeholder_bs_2_thumb.jpg',
-    image: 'image/placeholder_bs_2_full.jpg',
-    label: 'Baby Shoot 22 (Placeholder)',
-    category: 'Baby Shoots'
-  },
-  {
-    thumbnail: 'image/placeholder_bs_3_thumb.jpg',
-    image: 'image/placeholder_bs_3_full.jpg',
-    label: 'Baby Shoot 23 (Placeholder)',
-    category: 'Baby Shoots'
-  },
   // --- Maternity Shoot (all images from folder) ---
   {
     thumbnail: 'image/Maternity Shoot/SAVE_20240924_133845.jpg',
@@ -412,12 +307,6 @@ const portfolioItems = [
     category: 'New Born'
   },
   {
-    thumbnail: 'image/New Born/SAVE_20241225_141330_compressed.jpg',
-    image: 'image/New Born/SAVE_20241225_141330_compressed.jpg',
-    label: 'New Born 3',
-    category: 'New Born'
-  },
-  {
     thumbnail: 'image/New Born/SAVE_20240912_204409_compressed.jpg',
     image: 'image/New Born/SAVE_20240912_204409_compressed.jpg',
     label: 'New Born 4',
@@ -439,12 +328,6 @@ const portfolioItems = [
     thumbnail: 'image/New Born/SAVE_20240914_214641_compressed.jpg',
     image: 'image/New Born/SAVE_20240914_214641_compressed.jpg',
     label: 'New Born 7',
-    category: 'New Born'
-  },
-  {
-    thumbnail: 'image/New Born/SAVE_20240911_173857_compressed.jpg',
-    image: 'image/New Born/SAVE_20240911_173857_compressed.jpg',
-    label: 'New Born 8',
     category: 'New Born'
   },
   {
@@ -475,12 +358,6 @@ const portfolioItems = [
     thumbnail: 'image/New Born/SAVE_20240911_203022_compressed.jpg',
     image: 'image/New Born/SAVE_20240911_203022_compressed.jpg',
     label: 'New Born 13',
-    category: 'New Born'
-  },
-  {
-    thumbnail: 'image/New Born/SAVE_20240911_203036_compressed.jpg',
-    image: 'image/New Born/SAVE_20240911_203036_compressed.jpg',
-    label: 'New Born 14',
     category: 'New Born'
   },
   {
@@ -623,6 +500,8 @@ filterBar.addEventListener('click', (e) => {
     filterBar.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
     // Add active to clicked
     e.target.classList.add('active');
+    // Reset expanded state
+    isExpanded = false;
     // Render gallery
     renderGallery(e.target.dataset.category);
   }
@@ -640,24 +519,37 @@ function openLightbox(imgSrc) {
   lightboxCaption.textContent = '';
   lightboxImg.classList.remove('zoomed');
   document.body.style.overflow = 'hidden'; // Prevent scrolling when lightbox is open
+  
+  // Add active class for animation
+  setTimeout(() => {
+    lightbox.classList.add('active');
+  }, 10);
 }
 
 // Add click event for zooming
-lightboxImg.addEventListener('click', function() {
+lightboxImg.addEventListener('click', function(e) {
+  e.stopPropagation(); // Prevent event from bubbling up
   this.classList.toggle('zoomed');
 });
 
-closeBtn.onclick = function() {
-  lightbox.style.display = 'none';
-  lightboxImg.classList.remove('zoomed');
-  document.body.style.overflow = ''; // Restore scrolling
+closeBtn.onclick = function(e) {
+  e.stopPropagation(); // Prevent event from bubbling up
+  lightbox.classList.remove('active');
+  setTimeout(() => {
+    lightbox.style.display = 'none';
+    lightboxImg.classList.remove('zoomed');
+    document.body.style.overflow = ''; // Restore scrolling
+  }, 300); // Match the CSS transition duration
 }
 
 window.onclick = function(event) {
   if (event.target == lightbox) {
-    lightbox.style.display = 'none';
-    lightboxImg.classList.remove('zoomed');
-    document.body.style.overflow = ''; // Restore scrolling
+    lightbox.classList.remove('active');
+    setTimeout(() => {
+      lightbox.style.display = 'none';
+      lightboxImg.classList.remove('zoomed');
+      document.body.style.overflow = ''; // Restore scrolling
+    }, 300); // Match the CSS transition duration
   }
 }
 
@@ -665,9 +557,12 @@ window.onclick = function(event) {
 document.addEventListener('keydown', function(event) {
   if (lightbox.style.display === 'block') {
     if (event.key === 'Escape') {
-      lightbox.style.display = 'none';
-      lightboxImg.classList.remove('zoomed');
-      document.body.style.overflow = ''; // Restore scrolling
+      lightbox.classList.remove('active');
+      setTimeout(() => {
+        lightbox.style.display = 'none';
+        lightboxImg.classList.remove('zoomed');
+        document.body.style.overflow = ''; // Restore scrolling
+      }, 300); // Match the CSS transition duration
     }
   }
 });
