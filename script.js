@@ -1,6 +1,6 @@
 // Loading state handling
 let pageLoaded = false;
-let minimumLoadTime = 2000; // 2 seconds in milliseconds
+let minimumLoadTime = 1000; // 1 second in milliseconds
 let startTime = Date.now();
 
 // Function to create loading animation container
@@ -104,16 +104,13 @@ async function renderGallery(selectedCategory = 'All') {
     }
   }
 
-  // Render all items but initially hide those beyond the first 6 for 'All' category
-  for (let i = 0; i < itemsToShow.length; i++) {
-    const item = itemsToShow[i];
+  // Render only first 6 items initially for better performance
+  const initialItems = selectedCategory === 'All' ? itemsToShow.slice(0, 6) : itemsToShow;
+  
+  for (let i = 0; i < initialItems.length; i++) {
+    const item = initialItems[i];
     const div = document.createElement('div');
     div.className = 'item';
-    
-    // Hide items beyond first 6 for 'All' category
-    if (selectedCategory === 'All' && i >= 6) {
-      div.style.display = 'none';
-    }
     
     const loadingAnimation = createLoadingAnimation(div);
     
@@ -121,31 +118,38 @@ async function renderGallery(selectedCategory = 'All') {
     img.className = 'gallery-image';
     img.alt = item.label || '';
     img.loading = 'lazy';
+    img.decoding = 'async';
     
-    // Preload image before adding to DOM
-    try {
-      const preloadedImg = await preloadImage(item.thumbnail || item.image);
-      if (preloadedImg.complete && preloadedImg.naturalHeight !== 0) {
-        img.src = item.thumbnail || item.image;
-        img.classList.add('loaded');
-        loadingAnimation.style.opacity = '0';
-        setTimeout(() => {
-          loadingAnimation.remove();
-        }, 300);
-      } else {
-        // Skip this item if image is invalid
-        div.remove();
-        continue;
-      }
-    } catch (error) {
-      // Skip this item if image fails to load
-      div.remove();
-      continue;
-    }
+    // Use data-src for lazy loading
+    img.dataset.src = item.thumbnail || item.image;
+    
+    img.onload = function() {
+      this.classList.add('loaded');
+      loadingAnimation.style.opacity = '0';
+      setTimeout(() => {
+        loadingAnimation.remove();
+      }, 300);
+    };
+    
+    img.onerror = function() {
+      this.src = 'image/placeholder.jpg';
+      loadingAnimation.remove();
+    };
     
     div.appendChild(img);
     div.addEventListener('click', () => openLightbox(item.image));
     gallery.appendChild(div);
+  }
+
+  // Load remaining items in chunks
+  if (selectedCategory === 'All' && itemsToShow.length > 6) {
+    const remainingItems = itemsToShow.slice(6);
+    const chunkSize = 6;
+    
+    for (let i = 0; i < remainingItems.length; i += chunkSize) {
+      const chunk = remainingItems.slice(i, i + chunkSize);
+      await renderGalleryChunk(chunk, i, chunkSize);
+    }
   }
 
   // Reset expanded state when changing categories
@@ -170,25 +174,27 @@ const imageObserver = new IntersectionObserver((entries, observer) => {
     if (entry.isIntersecting) {
       const img = entry.target;
       if (img.dataset.src) {
-        preloadImage(img.dataset.src).then(() => {
-          img.src = img.dataset.src;
-          img.removeAttribute('data-src');
-        }).catch(() => {
-          img.src = 'image/placeholder.jpg';
-        });
+        img.src = img.dataset.src;
+        img.removeAttribute('data-src');
         observer.unobserve(img);
       }
     }
   });
 }, {
-  rootMargin: '50px 0px',
-  threshold: 0.01
+  rootMargin: '100px 0px',
+  threshold: 0.1
 });
 
-function loadVisibleImages() {
+// Initialize Intersection Observer for lazy loading
+function initializeLazyLoading() {
   const images = document.querySelectorAll('img[data-src]');
   images.forEach(img => imageObserver.observe(img));
 }
+
+// Call initializeLazyLoading after initial render
+renderGallery().then(() => {
+  initializeLazyLoading();
+});
 
 window.addEventListener('load', function() {
   pageLoaded = true;
@@ -633,6 +639,7 @@ function openLightbox(imgSrc) {
   lightboxImg.src = imgSrc;
   lightboxCaption.textContent = '';
   lightboxImg.classList.remove('zoomed');
+  document.body.style.overflow = 'hidden'; // Prevent scrolling when lightbox is open
 }
 
 // Add click event for zooming
@@ -643,14 +650,27 @@ lightboxImg.addEventListener('click', function() {
 closeBtn.onclick = function() {
   lightbox.style.display = 'none';
   lightboxImg.classList.remove('zoomed');
+  document.body.style.overflow = ''; // Restore scrolling
 }
 
 window.onclick = function(event) {
   if (event.target == lightbox) {
     lightbox.style.display = 'none';
     lightboxImg.classList.remove('zoomed');
+    document.body.style.overflow = ''; // Restore scrolling
   }
 }
+
+// Add keyboard support for closing lightbox
+document.addEventListener('keydown', function(event) {
+  if (lightbox.style.display === 'block') {
+    if (event.key === 'Escape') {
+      lightbox.style.display = 'none';
+      lightboxImg.classList.remove('zoomed');
+      document.body.style.overflow = ''; // Restore scrolling
+    }
+  }
+});
 
 // Hamburger menu functionality
 const hamburger = document.getElementById('hamburger');
