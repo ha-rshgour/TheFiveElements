@@ -6,6 +6,8 @@
   --hover-color: #b6b09f;
   --card-bg: #ffffff;
   --shadow-color: rgba(0, 0, 0, 0.1);
+  --transition-duration: 2s;
+  --path-length: 157px;
 }
 
 html {
@@ -132,25 +134,72 @@ header h1 {
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
 }
 
+/* Loading Animation Styles */
 #loading-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(242, 242, 242, 0.95);
+  background: #fff;
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
   z-index: 9999;
-  transition: opacity 0.5s ease-out;
 }
 
 .loading-animation {
-  width: 150px;
+  overflow: visible;
+  width: 100px;
   height: 150px;
-  display: block;
-  object-fit: contain;
+}
+
+.loading-animation g {
+  animation: slide var(--transition-duration) linear infinite;
+}
+
+.loading-animation g:nth-child(2) {
+  animation-delay: calc(var(--transition-duration) / 4);
+}
+
+.loading-animation g:nth-child(2) path {
+  animation-delay: calc(var(--transition-duration) / 4);
+  stroke-dasharray: 0px calc(var(--path-length) + 1);
+  stroke-dashoffset: 1px;
+}
+
+.loading-animation path {
+  stroke: url(#gradient);
+  stroke-width: 20px;
+  stroke-linecap: round;
+  fill: none;
+  stroke-dasharray: 0 var(--path-length);
+  stroke-dashoffset: 0;
+  animation: escalade var(--transition-duration) cubic-bezier(0.8, 0, 0.2, 1) infinite;
+}
+
+@keyframes slide {
+  0% {
+    transform: translateY(-50px);
+  }
+  100% {
+    transform: translateY(50px);
+  }
+}
+
+@keyframes escalade {
+  0% {
+    stroke-dasharray: 0 var(--path-length);
+    stroke-dashoffset: 0;
+  }
+  50% {
+    stroke-dasharray: var(--path-length) var(--path-length);
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dasharray: var(--path-length) var(--path-length);
+    stroke-dashoffset: calc(-1 * (var(--path-length) - 1));
+  }
 }
 
 .gallery-loading {
