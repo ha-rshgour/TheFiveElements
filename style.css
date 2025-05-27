@@ -48,36 +48,55 @@ header h1 {
   align-items: center;
   justify-content: space-between;
   background: var(--card-bg);
-  padding: 0.3rem 1.2rem;
-  min-height: 44px;
+  padding: 0.3rem 2rem;
+  min-height: 60px;
   position: relative;
   z-index: 200;
   margin: 0;
   border-bottom: 1px solid var(--accent-color);
   margin: 0 auto;
+  max-width: 1920px;
+  box-sizing: border-box;
 }
 
 .logo {
-  font-size: 1rem;
-  margin-bottom: 0;
-  margin-right: 0.3rem;
+  height: 10px;
+  margin-top: 0;
+  margin-bottom: -15px;
   display: flex;
   align-items: center;
+  gap: 15px;
 }
 
 .logo img {
-  height: 120px;
+  height: 100px;
   width: auto;
   object-fit: contain;
   background: transparent;
-  margin-top: -20px;
-  margin-bottom: -40px;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.logo-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.logo-url {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.logo-title {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: var(--text-color);
 }
 
 .main-nav ul {
   list-style: none;
   display: flex;
-  gap: 1.2rem;
+  gap: 1.5rem;
   margin: 0;
   padding: 0;
   align-items: center;
@@ -89,7 +108,7 @@ header h1 {
   font-weight: 500;
   font-size: 1rem;
   transition: color 0.2s, background 0.2s;
-  padding: 0.3rem 0.7rem;
+  padding: 0.4rem 0.8rem;
   border-radius: 6px;
 }
 
@@ -271,7 +290,7 @@ header h1 {
   min-height: 100px;
   opacity: 0;
   transition: opacity 0.3s ease-out;
-  background: #f5f5f5; /* Light gray background while loading */
+  background: #f5f5f5;
 }
 
 .gallery-image.loaded {
@@ -522,20 +541,36 @@ footer {
 
 @media (max-width: 900px) {
   .main-nav {
-    padding: 0.2rem 0.7rem;
+    padding: 0.2rem 1.5rem;
+    min-height: 50px;
   }
   
   .logo {
-    font-size: 1.1rem;
-    margin-right: 0.7rem;
+    gap: 10px;
   }
   
   .logo img {
-    height: 100px;
-    margin-top: -15px;
-    margin-bottom: -30px;
+    height: 90px;
+    margin-top: 0;
+    margin-bottom: 0;
   }
   
+  .logo-url {
+    font-size: 0.8rem;
+  }
+  
+  .logo-title {
+    font-size: 1.1rem;
+  }
+  
+  .main-nav ul {
+    gap: 1.2rem;
+  }
+  
+  .main-nav a {
+    padding: 0.3rem 0.6rem;
+  }
+
   .welcome {
     height: 60vh;
     min-height: 400px;
@@ -552,24 +587,77 @@ footer {
   }
 }
 
+/* Responsive adjustments for tablets and smaller (Hamburger Menu breakpoint) */
+@media (max-width: 768px) {
+  .main-nav ul {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 0.5rem;
+    width: 100%;
+    background: var(--card-bg);
+    position: absolute;
+    top: 100%;
+    left: 0;
+    box-shadow: 0 8px 24px var(--shadow-color);
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+    padding: 1rem;
+    transition: all 0.3s ease;
+    z-index: 250;
+  }
+
+  .main-nav ul.open {
+    display: flex;
+  }
+
+  .main-nav a {
+    font-size: 1rem;
+    padding: 0.5rem 0.3rem;
+    display: block;
+    width: 100%;
+    text-align: center;
+  }
+
+  .hamburger {
+    display: flex;
+    margin-left: auto;
+    width: 40px;
+    height: 40px;
+  }
+
+  .hamburger span {
+    height: 4px;
+    margin: 4px 0;
+  }
+}
+
+/* Responsive adjustments for mobile */
 @media (max-width: 600px) {
   .main-nav {
-    padding: 0.2rem 0.4rem;
-    min-height: 40px;
+    padding: 0.1rem 1rem;
+    min-height: 45px;
   }
   
   .logo {
-    font-size: 1rem;
-    margin-bottom: 0;
-    margin-right: 0.3rem;
+    gap: 8px;
   }
-  
+
   .logo img {
     height: 80px;
-    margin-top: -10px;
-    margin-bottom: -20px;
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+
+  .logo-url {
+    font-size: 0.75rem;
   }
   
+  .logo-title {
+    font-size: 1rem;
+  }
+
   .welcome {
     height: 50vh;
     min-height: 300px;
@@ -623,60 +711,6 @@ footer {
   #lightbox-caption {
     font-size: 1rem;
     bottom: 10px;
-  }
-  .hamburger {
-    display: flex;
-    margin-left: auto;
-  }
-  .main-nav ul {
-    display: none;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-    margin-top: 0;
-    width: 100%;
-    background: var(--card-bg);
-    position: absolute;
-    top: 100%;
-    left: 0;
-    box-shadow: 0 8px 24px var(--shadow-color);
-    border-bottom-left-radius: 12px;
-    border-bottom-right-radius: 12px;
-    padding: 0.7rem;
-    transition: all 0.3s ease;
-    z-index: 250;
-  }
-  .main-nav ul.open {
-    display: flex;
-  }
-  .main-nav a {
-    font-size: 0.98rem;
-    padding: 0.5rem 0.3rem;
-    display: block;
-    width: 100%;
-  }
-  .services {
-    padding: 2rem 1rem;
-    width: 100%;
-    box-sizing: border-box;
-  }
-  .about {
-    padding: 2rem 1rem;
-    width: 100%;
-    box-sizing: border-box;
-  }
-  .about-content {
-    width: 100%;
-    box-sizing: border-box;
-  }
-  .gallery-filter {
-    width: 100%;
-    box-sizing: border-box;
-    padding: 0 1rem;
-  }
-  .gallery-filter button {
-    font-size: 0.9rem;
-    padding: 0.4rem 0.8rem;
   }
 }
 
