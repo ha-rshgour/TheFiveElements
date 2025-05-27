@@ -212,6 +212,7 @@ header h1 {
   box-shadow: 0 2px 8px var(--shadow-color);
   margin: 2rem auto;
   width: fit-content;
+  animation: fadeIn 0.3s ease-out;
 }
 
 .gallery {
@@ -224,6 +225,8 @@ header h1 {
   box-sizing: border-box;
   contain: layout;
   min-height: 200px;
+  opacity: 0;
+  animation: fadeIn 0.5s ease-out forwards;
 }
 
 .item {
@@ -237,13 +240,15 @@ header h1 {
   text-align: center;
   padding: 0;
   cursor: pointer;
-  transition: transform 0.2s ease-out;
+  transition: transform 0.2s ease-out, opacity 0.3s ease-out;
   break-inside: avoid;
   position: relative;
-  will-change: transform;
+  will-change: transform, opacity;
   transform: translateZ(0);
   backface-visibility: hidden;
   min-height: 100px;
+  opacity: 0;
+  animation: fadeIn 0.3s ease-out forwards;
 }
 
 .item:hover {
@@ -264,6 +269,14 @@ header h1 {
   backface-visibility: hidden;
   content-visibility: auto;
   min-height: 100px;
+  opacity: 0;
+  transition: opacity 0.3s ease-out;
+  background: #f5f5f5; /* Light gray background while loading */
+}
+
+.gallery-image.loaded {
+  opacity: 1;
+  background: transparent;
 }
 
 .image-loading-animation {
@@ -283,6 +296,33 @@ header h1 {
   box-shadow: 0 2px 10px var(--shadow-color);
   transition: opacity 0.3s ease-out;
   will-change: opacity;
+  animation: pulse 1.5s ease-in-out infinite;
+  opacity: 1;
+}
+
+.image-loading-animation.fade-out {
+  opacity: 0;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: translate(-50%, -50%) scale(0.95);
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.05);
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(0.95);
+  }
 }
 
 .loader-gif {
