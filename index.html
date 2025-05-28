@@ -185,11 +185,15 @@
   <!-- Preload critical resources -->
   <link rel="preload" href="style.css" as="style">
   <link rel="preload" href="script.js" as="script">
-  <link rel="preload" href="image/TFE Studio.webp" as="image">
+  <!-- Preload the LCP Image (Hero Image) -->
+  <link rel="preload" href="image/optimized/hero-800.webp" as="image" type="image/webp">
   <link rel="preload" href="image/Fading aperture.gif" as="image">
+  <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style">
   
   <!-- Preconnect to CDN -->
-  <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   
   <!-- Load critical CSS -->
   <link rel="stylesheet" href="style.css">
@@ -197,6 +201,67 @@
   <!-- Defer non-critical JavaScript -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js" defer></script>
   <script src="script.js" defer></script>
+
+  <!-- Register Service Worker -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(registration => {
+            console.log('ServiceWorker registration successful');
+          })
+          .catch(err => {
+            console.log('ServiceWorker registration failed: ', err);
+          });
+      });
+    }
+  </script>
+
+  <!-- Add responsive image support and Intersection Observer -->
+  <script>
+    // Function to generate srcset for responsive images
+    function generateSrcSet(imagePath) {
+      const sizes = [400, 800, 1200, 1600];
+      const imageBaseName = imagePath.substring(0, imagePath.lastIndexOf('.'));
+      const imageExtension = imagePath.substring(imagePath.lastIndexOf('.') + 1);
+      
+      // Construct srcset with optimized image paths
+      return sizes.map(size => `${imageBaseName}-${size}.${imageExtension} ${size}w`).join(', ');
+    }
+
+    // Add intersection observer for gallery images if supported
+    if ('IntersectionObserver' in window) {
+      const imageObserver = new IntersectionObserver((entries, observer) => {
+        entries.forEach(entry => {
+          if (entry.isInteracting) {
+            const img = entry.target;
+            // Use the data-srcset attribute for responsive images
+            if (img.dataset.srcset) {
+               img.srcset = img.dataset.srcset;
+            }
+            if (img.dataset.src) {
+               img.src = img.dataset.src;
+            }
+            img.classList.add('loaded');
+            observer.unobserve(img);
+          }
+        });
+      });
+
+      // Observe gallery images with lazy loading
+      document.querySelectorAll('.gallery img[loading="lazy"]').forEach(img => {
+        imageObserver.observe(img);
+      });
+    } else {
+      // Fallback for browsers that don't support Intersection Observer (using lazysizes if available)
+      // Check if browser supports native lazy loading first
+      if (!('loading' in HTMLImageElement.prototype)) {
+         const script = document.createElement('script');
+         script.src = 'https://cdnjs.cloudflare.com/ajax/libs/lazysizes/5.3.2/lazysizes.min.js';
+         document.body.appendChild(script);
+      }
+    }
+  </script>
 </head>
 <body>
   <div id="loading-overlay">
@@ -221,8 +286,9 @@
         <picture>
           <source srcset="image/TFE Studio.webp" type="image/webp">
           <img src="image/TFE Studio.webp"
-               alt="The Five Element Studio Logo"
-               loading="lazy">
+               alt="TFE Studio Logo"
+               loading="eager"
+               width="200" height="60">
         </picture>
       </div>
       <button class="hamburger" id="hamburger" aria-label="Open menu">
@@ -261,27 +327,36 @@
       <div class="services-grid">
         <div class="service-card">
           <picture>
+            <source srcset="image/Baby Shoots/SAVE_20250206_081640-min.webp" type="image/webp">
             <img src="image/Baby Shoots/SAVE_20250206_081640-min.webp"
                  alt="Baby Photography" 
-                 loading="lazy">
+                 loading="lazy"
+                 width="800"
+                 height="533">
           </picture>
           <h3>Baby Photography</h3>
           <p>Adorable baby shoots to capture your little one's precious moments.</p>
         </div>
         <div class="service-card">
           <picture>
-            <img src="image/New Born/SAVE_20250509_101639_compressed.webp"
+            <source srcset="image/New Born/SAVE_20250509_101639_compressed_17_11zon.webp" type="image/webp">
+            <img src="image/New Born/SAVE_20250509_101639_compressed_17_11zon.webp"
                  alt="New Born Photography" 
-                 loading="lazy">
+                 loading="lazy"
+                 width="800"
+                 height="533">
           </picture>
           <h3>New Born Photography</h3>
           <p>Capture the first precious moments of your newborn with our specialized newborn photography sessions.</p>
         </div>
         <div class="service-card">
           <picture>
-            <img src="image/Maternity Shoot/DSC04737.webp"
+            <source srcset="image/Maternity Shoot/DSC04737_5_11zon.webp" type="image/webp">
+            <img src="image/Maternity Shoot/DSC04737_5_11zon.webp"
                  alt="Maternity Photography" 
-                 loading="lazy">
+                 loading="lazy"
+                 width="800"
+                 height="533">
           </picture>
           <h3>Maternity Photography</h3>
           <p>Beautiful maternity shoots to celebrate this special time in your life.</p>
@@ -315,7 +390,8 @@
             <source srcset="image/back studio.webp" type="image/webp">
             <img src="image/back studio.webp"
                  alt="Our Studio" 
-                 loading="lazy">
+                 loading="eager"
+                 width="800" height="600">
           </picture>
         </div>
       </div>

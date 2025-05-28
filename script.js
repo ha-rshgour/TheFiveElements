@@ -1,4 +1,4 @@
-// Loading state handling
+// Loading state handling with performance optimization
 let pageLoaded = false;
 let minimumLoadTime = 1000; // 1 second in milliseconds
 let startTime = Date.now();
@@ -12,15 +12,18 @@ function handleInitialLoad() {
   const elapsedTime = currentTime - startTime;
   const remainingTime = Math.max(0, minimumLoadTime - elapsedTime);
 
-  setTimeout(() => {
-    const loadingOverlay = document.getElementById('loading-overlay');
-    if (loadingOverlay) {
-      loadingOverlay.style.opacity = '0';
-      setTimeout(() => {
-        loadingOverlay.style.display = 'none';
-      }, 500);
-    }
-  }, remainingTime);
+  // Use requestAnimationFrame for smoother animations
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      const loadingOverlay = document.getElementById('loading-overlay');
+      if (loadingOverlay) {
+        loadingOverlay.style.opacity = '0';
+        setTimeout(() => {
+          loadingOverlay.style.display = 'none';
+        }, 500);
+      }
+    }, remainingTime);
+  });
 }
 
 // Listen for the load event only once
@@ -87,7 +90,7 @@ function handleLazyLoad() {
   });
 }
 
-// Optimize initial gallery render
+// Improved gallery rendering with performance optimization
 async function renderGallery(selectedCategory = 'All') {
   const gallery = document.getElementById('gallery');
   if (!gallery) return;
@@ -117,12 +120,13 @@ async function renderGallery(selectedCategory = 'All') {
     const initialLoadCount = selectedCategory === 'All' ? 6 : itemsToShow.length;
     const initialItems = itemsToShow.slice(0, initialLoadCount);
 
-    // Create initial gallery items
+    // Create initial gallery items with performance optimization
+    const fragment = document.createDocumentFragment();
+    
     initialItems.forEach(item => {
       const div = document.createElement('div');
       div.className = 'item';
       
-      // Create and add loading animation
       const loadingAnimation = createLoadingAnimation(div);
       
       const img = document.createElement('img');
@@ -130,10 +134,9 @@ async function renderGallery(selectedCategory = 'All') {
       img.alt = item.label || '';
       img.loading = 'lazy';
       
-      // Set image source directly for initial load
-      img.src = item.thumbnail || item.image;
-      
-      // Handle image load success
+      // Set image source directly and handle loading
+      const imagePath = item.thumbnail || item.image;
+      img.src = imagePath;
       img.onload = function() {
         this.classList.add('loaded');
         if (loadingAnimation) {
@@ -143,15 +146,18 @@ async function renderGallery(selectedCategory = 'All') {
           }, 300);
         }
       };
-
-      // Handle image load error
+      
       img.onerror = function() {
+        console.error('Failed to load image:', imagePath);
         this.src = 'image/placeholder.jpg';
         this.alt = 'Image not available';
         if (loadingAnimation) {
           loadingAnimation.remove();
         }
       };
+      
+      img.width = 800;
+      img.height = 600;
       
       div.appendChild(img);
       div.addEventListener('click', function(e) {
@@ -160,8 +166,10 @@ async function renderGallery(selectedCategory = 'All') {
         openLightbox(item.image);
       });
       
-      gallery.appendChild(div);
+      fragment.appendChild(div);
     });
+
+    gallery.appendChild(fragment);
 
     // Store remaining items for "Show More" functionality
     if (selectedCategory === 'All') {
@@ -183,7 +191,7 @@ async function renderGallery(selectedCategory = 'All') {
     updateGalleryDisplay();
   } catch (error) {
     console.error('Error rendering gallery:', error);
-    gallery.innerHTML = '<div class="gallery-loading">Error loading gallery. Please try again.</div>';
+    gallery.innerHTML = '<div class="gallery-error">Error loading gallery. Please try again later.</div>';
   }
 }
 
@@ -207,18 +215,38 @@ async function loadMoreImages() {
     img.loading = 'lazy';
     
     // Set image source directly
-    img.src = item.thumbnail || item.image;
+    img.dataset.src = item.thumbnail || item.image;
+    img.dataset.srcset = generateSrcSet(item.image);
+    img.width = 800;
+    img.height = 600;
     
-    img.onload = function() {
-      this.classList.add('loaded');
-      if (loadingAnimation) {
-        loadingAnimation.style.opacity = '0';
-        setTimeout(() => {
-          loadingAnimation.remove();
-        }, 300);
-      }
-    };
-
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const img = entry.target;
+          if (img.dataset.srcset) {
+             img.srcset = img.dataset.srcset;
+          }
+          if (img.dataset.src) {
+             img.src = img.dataset.src;
+          }
+          img.classList.add('loaded');
+          if (loadingAnimation) {
+            loadingAnimation.style.opacity = '0';
+            setTimeout(() => {
+              loadingAnimation.remove();
+            }, 300);
+          }
+          observer.unobserve(img);
+        }
+      });
+    }, {
+      rootMargin: '50px 0px',
+      threshold: 0.1
+    });
+    
+    observer.observe(img);
+    
     img.onerror = function() {
       this.src = 'image/placeholder.jpg';
       this.alt = 'Image not available';
@@ -324,17 +352,39 @@ document.addEventListener('keydown', function(event) {
   }
 });
 
-// Hamburger menu functionality
+// Improved mobile menu handling
 const hamburger = document.getElementById('hamburger');
 const navLinks = document.getElementById('nav-links');
 
 if (hamburger && navLinks) {
   hamburger.addEventListener('click', () => {
+    hamburger.classList.toggle('open');
     navLinks.classList.toggle('open');
+    document.body.style.overflow = navLinks.classList.contains('open') ? 'hidden' : '';
+  });
+
+  // Close menu when clicking outside
+  document.addEventListener('click', (e) => {
+    if (navLinks.classList.contains('open') && 
+        !navLinks.contains(e.target) && 
+        !hamburger.contains(e.target)) {
+      hamburger.classList.remove('open');
+      navLinks.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+  });
+
+  // Close menu on escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && navLinks.classList.contains('open')) {
+      hamburger.classList.remove('open');
+      navLinks.classList.remove('open');
+      document.body.style.overflow = '';
+    }
   });
 }
 
-// Smooth scrolling for navigation links
+// Improved smooth scrolling with performance optimization
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
   anchor.addEventListener('click', function (e) {
     e.preventDefault();
@@ -343,19 +393,26 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     
     const targetElement = document.querySelector(targetId);
     if (targetElement) {
-      const headerOffset = 80; // Adjust this value based on your header height
+      const headerOffset = 80;
       const elementPosition = targetElement.getBoundingClientRect().top;
       const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
 
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: 'smooth'
-      });
+      // Use smooth scrolling with fallback
+      if ('scrollBehavior' in document.documentElement.style) {
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: 'smooth'
+        });
+      } else {
+        // Fallback for browsers that don't support smooth scrolling
+        window.scrollTo(0, offsetPosition);
+      }
 
       // Close mobile menu if open
-      const navLinks = document.getElementById('nav-links');
       if (navLinks.classList.contains('open')) {
+        hamburger.classList.remove('open');
         navLinks.classList.remove('open');
+        document.body.style.overflow = '';
       }
     }
   });
@@ -536,239 +593,239 @@ const portfolioItems = [
   },
   // --- Maternity Shoot (all images from folder) ---
   {
-    thumbnail: 'image/Maternity Shoot/SAVE_20240924_133845.webp',
-    image: 'image/Maternity Shoot/SAVE_20240924_133845.webp',
+    thumbnail: 'image/Maternity Shoot/ABP05999 Logo_1_11zon.webp',
+    image: 'image/Maternity Shoot/ABP05999 Logo_1_11zon.webp',
     label: 'Maternity Shoot 1',
     category: 'Maternity Shoot'
   },
   {
-    thumbnail: 'image/Maternity Shoot/DSC04614 Logo.webp',
-    image: 'image/Maternity Shoot/DSC04614 Logo.webp',
+    thumbnail: 'image/Maternity Shoot/ABP06330_2_11zon.webp',
+    image: 'image/Maternity Shoot/ABP06330_2_11zon.webp',
     label: 'Maternity Shoot 2',
     category: 'Maternity Shoot'
   },
   {
-    thumbnail: 'image/Maternity Shoot/ABP06330.webp',
-    image: 'image/Maternity Shoot/ABP06330.webp',
+    thumbnail: 'image/Maternity Shoot/DSC04614 Logo_3_11zon.webp',
+    image: 'image/Maternity Shoot/DSC04614 Logo_3_11zon.webp',
     label: 'Maternity Shoot 3',
     category: 'Maternity Shoot'
   },
   {
-    thumbnail: 'image/Maternity Shoot/ABP05999 Logo.webp',
-    image: 'image/Maternity Shoot/ABP05999 Logo.webp',
+    thumbnail: 'image/Maternity Shoot/DSC04721_4_11zon.webp',
+    image: 'image/Maternity Shoot/DSC04721_4_11zon.webp',
     label: 'Maternity Shoot 4',
     category: 'Maternity Shoot'
   },
   {
-    thumbnail: 'image/Maternity Shoot/DSC04821.webp',
-    image: 'image/Maternity Shoot/DSC04821.webp',
+    thumbnail: 'image/Maternity Shoot/DSC04737_5_11zon.webp',
+    image: 'image/Maternity Shoot/DSC04737_5_11zon.webp',
     label: 'Maternity Shoot 5',
     category: 'Maternity Shoot'
   },
   {
-    thumbnail: 'image/Maternity Shoot/DSC04737.webp',
-    image: 'image/Maternity Shoot/DSC04737.webp',
+    thumbnail: 'image/Maternity Shoot/DSC04821_6_11zon.webp',
+    image: 'image/Maternity Shoot/DSC04821_6_11zon.webp',
     label: 'Maternity Shoot 6',
     category: 'Maternity Shoot'
   },
   {
-    thumbnail: 'image/Maternity Shoot/DSC04721.webp',
-    image: 'image/Maternity Shoot/DSC04721.webp',
+    thumbnail: 'image/Maternity Shoot/SAVE_20240924_133845_7_11zon.webp',
+    image: 'image/Maternity Shoot/SAVE_20240924_133845_7_11zon.webp',
     label: 'Maternity Shoot 7',
     category: 'Maternity Shoot'
   },
   // --- New Born (all images from folder) ---
   {
-    thumbnail: 'image/New Born/SAVE_20250509_101639_compressed.webp',
-    image: 'image/New Born/SAVE_20250509_101639_compressed.webp',
+    thumbnail: 'image/New Born/SAVE_20240911_203022_compressed_1_11zon.webp',
+    image: 'image/New Born/SAVE_20240911_203022_compressed_1_11zon.webp',
     label: 'New Born 1',
     category: 'New Born'
   },
   {
-    thumbnail: 'image/New Born/SAVE_20250504_200231_compressed.webp',
-    image: 'image/New Born/SAVE_20250504_200231_compressed.webp',
+    thumbnail: 'image/New Born/SAVE_20240911_203030_compressed_2_11zon.webp',
+    image: 'image/New Born/SAVE_20240911_203030_compressed_2_11zon.webp',
     label: 'New Born 2',
     category: 'New Born'
   },
   {
-    thumbnail: 'image/New Born/SAVE_20240912_204409_compressed.webp',
-    image: 'image/New Born/SAVE_20240912_204409_compressed.webp',
+    thumbnail: 'image/New Born/SAVE_20240912_204409_compressed_3_11zon.webp',
+    image: 'image/New Born/SAVE_20240912_204409_compressed_3_11zon.webp',
+    label: 'New Born 3',
+    category: 'New Born'
+  },
+  {
+    thumbnail: 'image/New Born/SAVE_20240912_204419_compressed_4_11zon.webp',
+    image: 'image/New Born/SAVE_20240912_204419_compressed_4_11zon.webp',
     label: 'New Born 4',
     category: 'New Born'
   },
   {
-    thumbnail: 'image/New Born/SAVE_20241031_125823_compressed.webp',
-    image: 'image/New Born/SAVE_20241031_125823_compressed.webp',
+    thumbnail: 'image/New Born/SAVE_20240914_214641_compressed_5_11zon.webp',
+    image: 'image/New Born/SAVE_20240914_214641_compressed_5_11zon.webp',
     label: 'New Born 5',
     category: 'New Born'
   },
   {
-    thumbnail: 'image/New Born/SAVE_20240912_204419_compressed.webp',
-    image: 'image/New Born/SAVE_20240912_204419_compressed.webp',
+    thumbnail: 'image/New Born/SAVE_20241031_125823_compressed_6_11zon.webp',
+    image: 'image/New Born/SAVE_20241031_125823_compressed_6_11zon.webp',
     label: 'New Born 6',
     category: 'New Born'
   },
   {
-    thumbnail: 'image/New Born/SAVE_20240914_214641_compressed.webp',
-    image: 'image/New Born/SAVE_20240914_214641_compressed.webp',
+    thumbnail: 'image/New Born/SAVE_20250130_191053_compressed_7_11zon.webp',
+    image: 'image/New Born/SAVE_20250130_191053_compressed_7_11zon.webp',
     label: 'New Born 7',
     category: 'New Born'
   },
   {
-    thumbnail: 'image/New Born/SAVE_20240911_203030_compressed.webp',
-    image: 'image/New Born/SAVE_20240911_203030_compressed.webp',
+    thumbnail: 'image/New Born/SAVE_20250130_191118_compressed_8_11zon.webp',
+    image: 'image/New Born/SAVE_20250130_191118_compressed_8_11zon.webp',
+    label: 'New Born 8',
+    category: 'New Born'
+  },
+  {
+    thumbnail: 'image/New Born/SAVE_20250130_191123_compressed_9_11zon.webp',
+    image: 'image/New Born/SAVE_20250130_191123_compressed_9_11zon.webp',
     label: 'New Born 9',
     category: 'New Born'
   },
   {
-    thumbnail: 'image/New Born/SAVE_20250504_200257_compressed.webp',
-    image: 'image/New Born/SAVE_20250504_200257_compressed.webp',
+    thumbnail: 'image/New Born/SAVE_20250504_200014_compressed_10_11zon.webp',
+    image: 'image/New Born/SAVE_20250504_200014_compressed_10_11zon.webp',
     label: 'New Born 10',
     category: 'New Born'
   },
   {
-    thumbnail: 'image/New Born/SAVE_20250130_191123_compressed.webp',
-    image: 'image/New Born/SAVE_20250130_191123_compressed.webp',
+    thumbnail: 'image/New Born/SAVE_20250504_200020_compressed_11_11zon.webp',
+    image: 'image/New Born/SAVE_20250504_200020_compressed_11_11zon.webp',
     label: 'New Born 11',
     category: 'New Born'
   },
   {
-    thumbnail: 'image/New Born/SAVE_20250130_191053_compressed.webp',
-    image: 'image/New Born/SAVE_20250130_191053_compressed.webp',
+    thumbnail: 'image/New Born/SAVE_20250504_200027_compressed_12_11zon.webp',
+    image: 'image/New Born/SAVE_20250504_200027_compressed_12_11zon.webp',
     label: 'New Born 12',
     category: 'New Born'
   },
   {
-    thumbnail: 'image/New Born/SAVE_20240911_203022_compressed.webp',
-    image: 'image/New Born/SAVE_20240911_203022_compressed.webp',
+    thumbnail: 'image/New Born/SAVE_20250504_200231_compressed_13_11zon.webp',
+    image: 'image/New Born/SAVE_20250504_200231_compressed_13_11zon.webp',
     label: 'New Born 13',
     category: 'New Born'
   },
   {
-    thumbnail: 'image/New Born/SAVE_20250504_200014_compressed.webp',
-    image: 'image/New Born/SAVE_20250504_200014_compressed.webp',
+    thumbnail: 'image/New Born/SAVE_20250504_200241_compressed_14_11zon.webp',
+    image: 'image/New Born/SAVE_20250504_200241_compressed_14_11zon.webp',
+    label: 'New Born 14',
+    category: 'New Born'
+  },
+  {
+    thumbnail: 'image/New Born/SAVE_20250504_200248_compressed_15_11zon.webp',
+    image: 'image/New Born/SAVE_20250504_200248_compressed_15_11zon.webp',
     label: 'New Born 15',
     category: 'New Born'
   },
   {
-    thumbnail: 'image/New Born/SAVE_20250130_191118_compressed.webp',
-    image: 'image/New Born/SAVE_20250130_191118_compressed.webp',
+    thumbnail: 'image/New Born/SAVE_20250504_200257_compressed_16_11zon.webp',
+    image: 'image/New Born/SAVE_20250504_200257_compressed_16_11zon.webp',
     label: 'New Born 16',
     category: 'New Born'
   },
   {
-    thumbnail: 'image/New Born/SAVE_20250504_200020_compressed.webp',
-    image: 'image/New Born/SAVE_20250504_200020_compressed.webp',
+    thumbnail: 'image/New Born/SAVE_20250509_101639_compressed_17_11zon.webp',
+    image: 'image/New Born/SAVE_20250509_101639_compressed_17_11zon.webp',
     label: 'New Born 17',
     category: 'New Born'
   },
+  // --- Festival (all images from folder) ---
   {
-    thumbnail: 'image/New Born/SAVE_20250504_200248_compressed.webp',
-    image: 'image/New Born/SAVE_20250504_200248_compressed.webp',
-    label: 'New Born 18',
-    category: 'New Born'
-  },
-  {
-    thumbnail: 'image/New Born/SAVE_20250504_200027_compressed.webp',
-    image: 'image/New Born/SAVE_20250504_200027_compressed.webp',
-    label: 'New Born 19',
-    category: 'New Born'
-  },
-  {
-    thumbnail: 'image/New Born/SAVE_20250504_200241_compressed.webp',
-    image: 'image/New Born/SAVE_20250504_200241_compressed.webp',
-    label: 'New Born 20',
-    category: 'New Born'
-  },
-  // --- Festival Images ---
-  {
-    thumbnail: 'image/festival/DSC04248_compressed.webp',
-    image: 'image/festival/DSC04248_compressed.webp',
+    thumbnail: 'image/festival/DSC04248_compressed_1_11zon.webp',
+    image: 'image/festival/DSC04248_compressed_1_11zon.webp',
     label: 'Festival 1',
     category: 'Festival'
   },
   {
-    thumbnail: 'image/festival/DSC05086_compressed.webp',
-    image: 'image/festival/DSC05086_compressed.webp',
+    thumbnail: 'image/festival/DSC05086_compressed_2_11zon.webp',
+    image: 'image/festival/DSC05086_compressed_2_11zon.webp',
     label: 'Festival 2',
     category: 'Festival'
   },
   {
-    thumbnail: 'image/festival/P1137672_compressed.webp',
-    image: 'image/festival/P1137672_compressed.webp',
+    thumbnail: 'image/festival/P1137672_compressed_3_11zon.webp',
+    image: 'image/festival/P1137672_compressed_3_11zon.webp',
     label: 'Festival 3',
     category: 'Festival'
   },
   {
-    thumbnail: 'image/festival/P1138193_compressed.webp',
-    image: 'image/festival/P1138193_compressed.webp',
+    thumbnail: 'image/festival/P1138193_compressed_4_11zon.webp',
+    image: 'image/festival/P1138193_compressed_4_11zon.webp',
     label: 'Festival 4',
     category: 'Festival'
   },
   {
-    thumbnail: 'image/festival/P1138369_compressed.webp',
-    image: 'image/festival/P1138369_compressed.webp',
+    thumbnail: 'image/festival/P1138369_compressed_5_11zon.webp',
+    image: 'image/festival/P1138369_compressed_5_11zon.webp',
     label: 'Festival 5',
     category: 'Festival'
   },
   {
-    thumbnail: 'image/festival/P1138409_compressed.webp',
-    image: 'image/festival/P1138409_compressed.webp',
+    thumbnail: 'image/festival/P1138409_compressed_6_11zon.webp',
+    image: 'image/festival/P1138409_compressed_6_11zon.webp',
+    label: 'Festival 6',
+    category: 'Festival'
+  },
+  {
+    thumbnail: 'image/festival/P1138934_compressed_7_11zon.webp',
+    image: 'image/festival/P1138934_compressed_7_11zon.webp',
     label: 'Festival 7',
     category: 'Festival'
   },
   {
-    thumbnail: 'image/festival/P1138934_compressed.webp',
-    image: 'image/festival/P1138934_compressed.webp',
+    thumbnail: 'image/festival/P1138962_compressed_8_11zon.webp',
+    image: 'image/festival/P1138962_compressed_8_11zon.webp',
+    label: 'Festival 8',
+    category: 'Festival'
+  },
+  {
+    thumbnail: 'image/festival/P1139025_compressed_9_11zon.webp',
+    image: 'image/festival/P1139025_compressed_9_11zon.webp',
+    label: 'Festival 9',
+    category: 'Festival'
+  },
+  {
+    thumbnail: 'image/festival/P1139037_compressed_10_11zon.webp',
+    image: 'image/festival/P1139037_compressed_10_11zon.webp',
     label: 'Festival 10',
     category: 'Festival'
   },
   {
-    thumbnail: 'image/festival/P1138962_compressed.webp',
-    image: 'image/festival/P1138962_compressed.webp',
+    thumbnail: 'image/festival/SAVE_20240825_232634-min_compressed_11_11zon.webp',
+    image: 'image/festival/SAVE_20240825_232634-min_compressed_11_11zon.webp',
     label: 'Festival 11',
     category: 'Festival'
   },
   {
-    thumbnail: 'image/festival/P1139025_compressed.webp',
-    image: 'image/festival/P1139025_compressed.webp',
+    thumbnail: 'image/festival/SAVE_20240825_232801_compressed_12_11zon.webp',
+    image: 'image/festival/SAVE_20240825_232801_compressed_12_11zon.webp',
     label: 'Festival 12',
     category: 'Festival'
   },
   {
-    thumbnail: 'image/festival/P1139037_compressed.webp',
-    image: 'image/festival/P1139037_compressed.webp',
+    thumbnail: 'image/festival/SAVE_20240825_232815_compressed_13_11zon.webp',
+    image: 'image/festival/SAVE_20240825_232815_compressed_13_11zon.webp',
     label: 'Festival 13',
     category: 'Festival'
   },
   {
-    thumbnail: 'image/festival/SAVE_20240825_232634-min_compressed.webp',
-    image: 'image/festival/SAVE_20240825_232634-min_compressed.webp',
+    thumbnail: 'image/festival/SAVE_20250225_155609_compressed_14_11zon.webp',
+    image: 'image/festival/SAVE_20250225_155609_compressed_14_11zon.webp',
     label: 'Festival 14',
     category: 'Festival'
   },
   {
-    thumbnail: 'image/festival/SAVE_20240825_232801_compressed.webp',
-    image: 'image/festival/SAVE_20240825_232801_compressed.webp',
+    thumbnail: 'image/festival/SAVE_20250226_190800_compressed_15_11zon.webp',
+    image: 'image/festival/SAVE_20250226_190800_compressed_15_11zon.webp',
     label: 'Festival 15',
-    category: 'Festival'
-  },
-  {
-    thumbnail: 'image/festival/SAVE_20240825_232815_compressed.webp',
-    image: 'image/festival/SAVE_20240825_232815_compressed.webp',
-    label: 'Festival 16',
-    category: 'Festival'
-  },
-  {
-    thumbnail: 'image/festival/SAVE_20250225_155609_compressed.webp',
-    image: 'image/festival/SAVE_20250225_155609_compressed.webp',
-    label: 'Festival 17',
-    category: 'Festival'
-  },
-  {
-    thumbnail: 'image/festival/SAVE_20250226_190800_compressed.webp',
-    image: 'image/festival/SAVE_20250226_190800_compressed.webp',
-    label: 'Festival 18',
     category: 'Festival'
   }
 ];

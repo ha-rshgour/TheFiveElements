@@ -6,9 +6,22 @@ const path = require('path');
 const config = {
   quality: 80,
   webp: true,
-  sizes: [400, 800, 1200], // Different sizes for responsive images
+  sizes: [400, 800, 1200, 1600], // Different sizes for responsive images
   inputDir: 'image',
-  outputDir: 'image/optimized'
+  outputDir: 'image/optimized',
+  formats: ['webp', 'avif'], // Add AVIF support for modern browsers
+  optimization: {
+    mozjpeg: true, // Use mozjpeg for better JPEG compression
+    oxipng: true,  // Use oxipng for better PNG compression
+    webp: {
+      quality: 80,
+      effort: 6    // Higher effort for better compression
+    },
+    avif: {
+      quality: 60, // AVIF can use lower quality due to better compression
+      effort: 6
+    }
+  }
 };
 
 // Ensure output directory exists
@@ -27,19 +40,37 @@ async function optimizeImage(inputPath, outputPath, size) {
     const newWidth = size;
     const newHeight = Math.round(size / ratio);
 
-    // Create WebP version
-    if (config.webp) {
-      const webpPath = outputPath.replace(/\.[^.]+$/, '.webp');
-      await image
-        .resize(newWidth, newHeight)
-        .webp({ quality: config.quality })
-        .toFile(webpPath);
+    // Process each format
+    for (const format of config.formats) {
+      const formatPath = outputPath.replace(/\.[^.]+$/, `.${format}`);
+      
+      let pipeline = image
+        .resize(newWidth, newHeight, {
+          fit: 'cover',
+          position: 'attention' // Use AI-based focal point detection
+        });
+
+      // Apply format-specific optimizations
+      switch (format) {
+        case 'webp':
+          pipeline = pipeline.webp(config.optimization.webp);
+          break;
+        case 'avif':
+          pipeline = pipeline.avif(config.optimization.avif);
+          break;
+      }
+
+      await pipeline.toFile(formatPath);
+      console.log(`Optimized: ${inputPath} -> ${formatPath}`);
     }
 
-    // Create original format version
+    // Create original format version with optimization
     await image
       .resize(newWidth, newHeight)
-      .jpeg({ quality: config.quality })
+      .jpeg({ 
+        quality: config.quality,
+        mozjpeg: config.optimization.mozjpeg 
+      })
       .toFile(outputPath);
 
     console.log(`Optimized: ${inputPath} -> ${outputPath}`);
@@ -53,28 +84,24 @@ async function processDirectory(dir) {
   const files = fs.readdirSync(dir);
   
   for (const file of files) {
-    const inputPath = path.join(dir, file);
-    const stat = fs.statSync(inputPath);
+    const filePath = path.join(dir, file);
+    const stat = fs.statSync(filePath);
     
     if (stat.isDirectory()) {
-      await processDirectory(inputPath);
-    } else if (/\.(jpg|jpeg|png)$/i.test(file)) {
-      const relativePath = path.relative(config.inputDir, inputPath);
-      const outputBasePath = path.join(config.outputDir, relativePath);
-      
-      // Create output directory if it doesn't exist
-      const outputDir = path.dirname(outputBasePath);
+      // Create corresponding output directory
+      const outputDir = path.join(config.outputDir, file);
       if (!fs.existsSync(outputDir)) {
         fs.mkdirSync(outputDir, { recursive: true });
       }
-
-      // Process each size
+      await processDirectory(filePath);
+    } else if (/\.(jpg|jpeg|png)$/i.test(file)) {
+      // Process each size for the image
       for (const size of config.sizes) {
-        const outputPath = outputBasePath.replace(
-          /(\.[^.]+)$/,
-          `-${size}$1`
+        const outputPath = path.join(
+          config.outputDir,
+          path.relative(config.inputDir, filePath).replace(/\.[^.]+$/, `-${size}$&`)
         );
-        await optimizeImage(inputPath, outputPath, size);
+        await optimizeImage(filePath, outputPath, size);
       }
     }
   }
@@ -83,4 +110,4 @@ async function processDirectory(dir) {
 // Start processing
 processDirectory(config.inputDir)
   .then(() => console.log('Image optimization complete!'))
-  .catch(console.error); 
+  .catch(error => console.error('Error during optimization:', error)); 
