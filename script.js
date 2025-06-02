@@ -3,6 +3,18 @@ let pageLoaded = false;
 let minimumLoadTime = 1000; // 1 second in milliseconds
 let startTime = Date.now();
 
+// Enhanced image cache with memory management
+const imageCache = new Map();
+const MAX_CACHE_SIZE = 50; // Maximum number of images to keep in cache
+
+// Function to manage cache size
+function manageCacheSize() {
+  if (imageCache.size > MAX_CACHE_SIZE) {
+    const keysToDelete = Array.from(imageCache.keys()).slice(0, imageCache.size - MAX_CACHE_SIZE);
+    keysToDelete.forEach(key => imageCache.delete(key));
+  }
+}
+
 // Function to handle initial page load
 function handleInitialLoad() {
   if (pageLoaded) return; // Prevent multiple executions
@@ -46,22 +58,47 @@ function createLoadingAnimation(container) {
   return loadingDiv;
 }
 
-// Function to preload images with timeout
-function preloadImage(src) {
+// Enhanced preload and cache function with retry logic
+function preloadAndCacheImage(src, retries = 3) {
+  if (imageCache.has(src)) {
+    return Promise.resolve(imageCache.get(src));
+  }
+
   return new Promise((resolve, reject) => {
     const img = new Image();
-    const timeout = setTimeout(() => {
-      reject(new Error(`Image load timeout: ${src}`));
-    }, 10000); // 10 second timeout
-
+    
+    // Set crossOrigin if needed
+    if (src.startsWith('http')) {
+      img.crossOrigin = 'anonymous';
+    }
+    
     img.onload = () => {
-      clearTimeout(timeout);
+      // Create a canvas to optimize the image
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.drawImage(img, 0, 0);
+      
+      // Store the optimized image
+      imageCache.set(src, img);
+      manageCacheSize();
       resolve(img);
     };
+    
     img.onerror = () => {
-      clearTimeout(timeout);
-      reject(new Error(`Failed to load image: ${src}`));
+      console.error(`Failed to load image: ${src}`);
+      if (retries > 0) {
+        console.log(`Retrying image load for: ${src}. Retries left: ${retries}`);
+        setTimeout(() => {
+          preloadAndCacheImage(src, retries - 1).then(resolve).catch(reject);
+        }, 1000); // Wait 1 second before retrying
+      } else {
+        console.error(`Max retries reached for image: ${src}`);
+        reject(new Error(`Failed to load image after multiple retries: ${src}`));
+      }
     };
+    
     img.src = src;
   });
 }
@@ -77,20 +114,99 @@ function isInViewport(element) {
   );
 }
 
-// Function to handle lazy loading
-function handleLazyLoad() {
-  const images = document.querySelectorAll('.gallery-image:not(.loaded)');
-  images.forEach(img => {
-    if (isInViewport(img) && !img.src) {
-      const dataSrc = img.getAttribute('data-src');
-      if (dataSrc) {
-        img.src = dataSrc;
+// Function to preload visible images
+function preloadVisibleImages() {
+  const images = document.querySelectorAll('.gallery-image');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const img = entry.target;
+        if (img.dataset.src) {
+          // Preload and cache, handle potential errors
+          preloadAndCacheImage(img.dataset.src)
+            .catch(error => {
+              console.error('Error preloading visible image:', error);
+              // Optionally, set a placeholder or show an error state for this specific image
+            });
+        }
       }
-    }
+    });
+  }, {
+    rootMargin: '300px 0px',
+    threshold: 0.1
   });
+
+  images.forEach(img => observer.observe(img));
 }
 
-// Improved gallery rendering with performance optimization
+// Optimize scroll performance
+let scrollTimeout;
+let isScrolling = false;
+
+window.addEventListener('scroll', () => {
+  if (!isScrolling) {
+    isScrolling = true;
+    requestAnimationFrame(() => {
+      // Your scroll handling code here
+      isScrolling = false;
+    });
+  }
+}, { passive: true });
+
+// Function to handle lazy loading
+function handleLazyLoad() {
+  const images = document.querySelectorAll('img[loading="lazy"]:not(.loaded)');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const img = entry.target;
+        if (!img.classList.contains('loading') && !img.classList.contains('loaded') && img.dataset.src) {
+          img.classList.add('loading');
+
+          const loadingAnimation = img.parentElement.querySelector('.image-loading-animation');
+
+          // Load image with natural dimensions
+          const tempImg = new Image();
+          tempImg.onload = () => {
+            // Set the actual image source
+            img.src = img.dataset.src;
+            img.classList.add('loaded');
+            img.classList.remove('loading');
+            
+            // Remove loading animation
+            if (loadingAnimation) {
+              loadingAnimation.style.opacity = '0';
+              setTimeout(() => {
+                loadingAnimation.remove();
+              }, 300);
+            }
+          };
+          
+          tempImg.onerror = () => {
+            console.error('Failed to load image:', img.dataset.src);
+            img.src = 'image/placeholder.jpg';
+            img.alt = 'Image not available';
+            img.classList.remove('loading');
+            
+            if (loadingAnimation) {
+              loadingAnimation.remove();
+            }
+          };
+          
+          tempImg.src = img.dataset.src;
+        }
+        observer.unobserve(img);
+      }
+    });
+  }, {
+    rootMargin: '50px 0px',
+    threshold: 0.1
+  });
+
+  images.forEach(img => observer.observe(img));
+}
+
+// Enhanced gallery rendering with performance optimization
 async function renderGallery(selectedCategory = 'All') {
   const gallery = document.getElementById('gallery');
   if (!gallery) return;
@@ -102,7 +218,7 @@ async function renderGallery(selectedCategory = 'All') {
     let itemsToShow;
     if (selectedCategory === 'All') {
       itemsToShow = portfolioItems.filter(item =>
-        ['Baby Shoots', 'New Born', 'Maternity Shoot'].includes(item.category)
+        ['Maternity Shoot', 'New Born', 'Baby Shoots'].includes(item.category)
       );
     } else {
       itemsToShow = portfolioItems.filter(item => item.category === selectedCategory);
@@ -116,8 +232,8 @@ async function renderGallery(selectedCategory = 'All') {
     // Clear gallery
     gallery.innerHTML = '';
 
-    // For 'All' category, initially show only 6-8 images
-    const initialLoadCount = selectedCategory === 'All' ? 6 : itemsToShow.length;
+    // For 'All' category, initially show only 12 images
+    const initialLoadCount = selectedCategory === 'All' ? 12 : itemsToShow.length;
     const initialItems = itemsToShow.slice(0, initialLoadCount);
 
     // Create initial gallery items with performance optimization
@@ -134,30 +250,9 @@ async function renderGallery(selectedCategory = 'All') {
       img.alt = item.label || '';
       img.loading = 'lazy';
       
-      // Set image source directly and handle loading
+      // Use data-src for lazy loading
       const imagePath = item.thumbnail || item.image;
-      img.src = imagePath;
-      img.onload = function() {
-        this.classList.add('loaded');
-        if (loadingAnimation) {
-          loadingAnimation.style.opacity = '0';
-          setTimeout(() => {
-            loadingAnimation.remove();
-          }, 300);
-        }
-      };
-      
-      img.onerror = function() {
-        console.error('Failed to load image:', imagePath);
-        this.src = 'image/placeholder.jpg';
-        this.alt = 'Image not available';
-        if (loadingAnimation) {
-          loadingAnimation.remove();
-        }
-      };
-      
-      img.width = 800;
-      img.height = 600;
+      img.dataset.src = imagePath;
       
       div.appendChild(img);
       div.addEventListener('click', function(e) {
@@ -169,7 +264,13 @@ async function renderGallery(selectedCategory = 'All') {
       fragment.appendChild(div);
     });
 
-    gallery.appendChild(fragment);
+    // Use requestAnimationFrame for smooth rendering
+    requestAnimationFrame(() => {
+      gallery.appendChild(fragment);
+      
+      // Initialize lazy loading
+      handleLazyLoad();
+    });
 
     // Store remaining items for "Show More" functionality
     if (selectedCategory === 'All') {
@@ -200,10 +301,12 @@ async function loadMoreImages() {
   const gallery = document.getElementById('gallery');
   if (!gallery || !window.remainingItems || window.remainingItems.length === 0) return;
 
-  // Load next batch of 6-8 images
-  const nextBatch = window.remainingItems.splice(0, 6);
+  // Load next batch of 12 images
+  const nextBatch = window.remainingItems.splice(0, 12);
   
-  for (const item of nextBatch) {
+  const fragment = document.createDocumentFragment();
+  
+  nextBatch.forEach(item => {
     const div = document.createElement('div');
     div.className = 'item';
     
@@ -213,47 +316,7 @@ async function loadMoreImages() {
     img.className = 'gallery-image';
     img.alt = item.label || '';
     img.loading = 'lazy';
-    
-    // Set image source directly
     img.dataset.src = item.thumbnail || item.image;
-    img.dataset.srcset = generateSrcSet(item.image);
-    img.width = 800;
-    img.height = 600;
-    
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          const img = entry.target;
-          if (img.dataset.srcset) {
-             img.srcset = img.dataset.srcset;
-          }
-          if (img.dataset.src) {
-             img.src = img.dataset.src;
-          }
-          img.classList.add('loaded');
-          if (loadingAnimation) {
-            loadingAnimation.style.opacity = '0';
-            setTimeout(() => {
-              loadingAnimation.remove();
-            }, 300);
-          }
-          observer.unobserve(img);
-        }
-      });
-    }, {
-      rootMargin: '50px 0px',
-      threshold: 0.1
-    });
-    
-    observer.observe(img);
-    
-    img.onerror = function() {
-      this.src = 'image/placeholder.jpg';
-      this.alt = 'Image not available';
-      if (loadingAnimation) {
-        loadingAnimation.remove();
-      }
-    };
     
     div.appendChild(img);
     div.addEventListener('click', function(e) {
@@ -262,8 +325,13 @@ async function loadMoreImages() {
       openLightbox(item.image);
     });
     
-    gallery.appendChild(div);
-  }
+    fragment.appendChild(div);
+  });
+
+  gallery.appendChild(fragment);
+  
+  // Initialize lazy loading for new images
+  handleLazyLoad();
 
   // Update show more button visibility
   const showMoreBtn = document.getElementById('show-more-btn');
@@ -299,6 +367,9 @@ const lightboxCaption = document.getElementById('lightbox-caption');
 const closeBtn = document.querySelector('.close');
 
 function openLightbox(imgSrc) {
+  // Add state to browser history
+  history.pushState({ lightbox: true, image: imgSrc }, '');
+  
   lightbox.style.display = 'block';
   lightboxImg.src = imgSrc;
   lightboxCaption.textContent = '';
@@ -311,14 +382,7 @@ function openLightbox(imgSrc) {
   }, 10);
 }
 
-// Add click event for zooming
-lightboxImg.addEventListener('click', function(e) {
-  e.stopPropagation(); // Prevent event from bubbling up
-  this.classList.toggle('zoomed');
-});
-
-closeBtn.onclick = function(e) {
-  e.stopPropagation(); // Prevent event from bubbling up
+function closeLightbox() {
   lightbox.classList.remove('active');
   setTimeout(() => {
     lightbox.style.display = 'none';
@@ -327,14 +391,27 @@ closeBtn.onclick = function(e) {
   }, 300); // Match the CSS transition duration
 }
 
+// Handle browser back button
+window.addEventListener('popstate', (event) => {
+  if (lightbox.style.display === 'block') {
+    closeLightbox();
+  }
+});
+
+// Add click event for zooming
+lightboxImg.addEventListener('click', function(e) {
+  e.stopPropagation(); // Prevent event from bubbling up
+  this.classList.toggle('zoomed');
+});
+
+closeBtn.onclick = function(e) {
+  e.stopPropagation(); // Prevent event from bubbling up
+  history.back(); // Go back in history instead of just closing
+}
+
 window.onclick = function(event) {
   if (event.target == lightbox) {
-    lightbox.classList.remove('active');
-    setTimeout(() => {
-      lightbox.style.display = 'none';
-      lightboxImg.classList.remove('zoomed');
-      document.body.style.overflow = ''; // Restore scrolling
-    }, 300); // Match the CSS transition duration
+    history.back(); // Go back in history instead of just closing
   }
 }
 
@@ -342,12 +419,7 @@ window.onclick = function(event) {
 document.addEventListener('keydown', function(event) {
   if (lightbox.style.display === 'block') {
     if (event.key === 'Escape') {
-      lightbox.classList.remove('active');
-      setTimeout(() => {
-        lightbox.style.display = 'none';
-        lightboxImg.classList.remove('zoomed');
-        document.body.style.overflow = ''; // Restore scrolling
-      }, 300); // Match the CSS transition duration
+      history.back(); // Go back in history instead of just closing
     }
   }
 });
@@ -428,7 +500,7 @@ function updateGalleryDisplay() {
   
   if (selectedCategory === 'All') {
     items.forEach((item, index) => {
-      if (isExpanded || index < 6) {
+      if (isExpanded || index < 12) {
         item.style.display = 'block';
       } else {
         item.style.display = 'none';
@@ -442,7 +514,7 @@ function updateGalleryDisplay() {
 
   // Update button text and visibility
   if (showMoreBtn) {
-    if (selectedCategory === 'All' && items.length > 6) {
+    if (selectedCategory === 'All' && items.length > 12) {
       showMoreBtn.style.display = 'block';
       showMoreBtn.textContent = isExpanded ? 'Show Less' : 'Show More';
     } else {
@@ -476,358 +548,374 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Portfolio items data
 const portfolioItems = [
-  // --- Baby Shoots (all images from folder) ---
   {
-    thumbnail: 'image/Baby Shoots/DSC05880-min.webp',
-    image: 'image/Baby Shoots/DSC05880-min.webp',
-    label: 'Baby Shoot 1',
-    category: 'Baby Shoots'
-  },
-  {
-    thumbnail: 'image/Baby Shoots/SAVE_20240819_222506-min.webp',
-    image: 'image/Baby Shoots/SAVE_20240819_222506-min.webp',
-    label: 'Baby Shoot 2',
-    category: 'Baby Shoots'
-  },
-  {
-    thumbnail: 'image/Baby Shoots/SAVE_20240925_154029-min.webp',
-    image: 'image/Baby Shoots/SAVE_20240925_154029-min.webp',
-    label: 'Baby Shoot 3',
-    category: 'Baby Shoots'
-  },
-  {
-    thumbnail: 'image/Baby Shoots/SAVE_20240925_154037-min.webp',
-    image: 'image/Baby Shoots/SAVE_20240925_154037-min.webp',
-    label: 'Baby Shoot 4',
-    category: 'Baby Shoots'
-  },
-  {
-    thumbnail: 'image/Baby Shoots/SAVE_20241022_123509-min.webp',
-    image: 'image/Baby Shoots/SAVE_20241022_123509-min.webp',
-    label: 'Baby Shoot 5',
-    category: 'Baby Shoots'
-  },
-  {
-    thumbnail: 'image/Baby Shoots/SAVE_20241022_123521-min.webp',
-    image: 'image/Baby Shoots/SAVE_20241022_123521-min.webp',
-    label: 'Baby Shoot 6',
-    category: 'Baby Shoots'
-  },
-  {
-    thumbnail: 'image/Baby Shoots/SAVE_20241022_123537-min.webp',
-    image: 'image/Baby Shoots/SAVE_20241022_123537-min.webp',
-    label: 'Baby Shoot 7',
-    category: 'Baby Shoots'
-  },
-  {
-    thumbnail: 'image/Baby Shoots/SAVE_20241127_214936-min.webp',
-    image: 'image/Baby Shoots/SAVE_20241127_214936-min.webp',
-    label: 'Baby Shoot 8',
-    category: 'Baby Shoots'
-  },
-  {
-    thumbnail: 'image/Baby Shoots/SAVE_20250205_130119-min.webp',
-    image: 'image/Baby Shoots/SAVE_20250205_130119-min.webp',
-    label: 'Baby Shoot 9',
-    category: 'Baby Shoots'
-  },
-  {
-    thumbnail: 'image/Baby Shoots/SAVE_20250206_081640-min.webp',
-    image: 'image/Baby Shoots/SAVE_20250206_081640-min.webp',
-    label: 'Baby Shoot 11',
-    category: 'Baby Shoots'
-  },
-  {
-    thumbnail: 'image/Baby Shoots/SAVE_20250206_081648-min.webp',
-    image: 'image/Baby Shoots/SAVE_20250206_081648-min.webp',
-    label: 'Baby Shoot 12',
-    category: 'Baby Shoots'
-  },
-  {
-    thumbnail: 'image/Baby Shoots/SAVE_20250306_104604-min.webp',
-    image: 'image/Baby Shoots/SAVE_20250306_104604-min.webp',
-    label: 'Baby Shoot 13',
-    category: 'Baby Shoots'
-  },
-  {
-    thumbnail: 'image/Baby Shoots/SAVE_20250309_195742-min.webp',
-    image: 'image/Baby Shoots/SAVE_20250309_195742-min.webp',
-    label: 'Baby Shoot 14',
-    category: 'Baby Shoots'
-  },
-  {
-    thumbnail: 'image/Baby Shoots/SAVE_20250309_195800-min.webp',
-    image: 'image/Baby Shoots/SAVE_20250309_195800-min.webp',
-    label: 'Baby Shoot 15',
-    category: 'Baby Shoots'
-  },
-  {
-    thumbnail: 'image/Baby Shoots/SAVE_20250328_144028-min.webp',
-    image: 'image/Baby Shoots/SAVE_20250328_144028-min.webp',
-    label: 'Baby Shoot 16',
-    category: 'Baby Shoots'
-  },
-  {
-    thumbnail: 'image/Baby Shoots/SAVE_20250328_152510-min.webp',
-    image: 'image/Baby Shoots/SAVE_20250328_152510-min.webp',
-    label: 'Baby Shoot 17',
-    category: 'Baby Shoots'
-  },
-  {
-    thumbnail: 'image/Baby Shoots/SAVE_20250328_152522-min.webp',
-    image: 'image/Baby Shoots/SAVE_20250328_152522-min.webp',
-    label: 'Baby Shoot 18',
-    category: 'Baby Shoots'
-  },
-  {
-    thumbnail: 'image/Baby Shoots/SAVE_20250328_244554-min.webp',
-    image: 'image/Baby Shoots/SAVE_20250328_244554-min.webp',
-    label: 'Baby Shoot 19',
-    category: 'Baby Shoots'
-  },
-  {
-    thumbnail: 'image/Baby Shoots/SAVE_20250328_244604-min.webp',
-    image: 'image/Baby Shoots/SAVE_20250328_244604-min.webp',
-    label: 'Baby Shoot 20',
-    category: 'Baby Shoots'
-  },
-  // --- Maternity Shoot (all images from folder) ---
-  {
-    thumbnail: 'image/Maternity Shoot/ABP05999 Logo_1_11zon.webp',
-    image: 'image/Maternity Shoot/ABP05999 Logo_1_11zon.webp',
+    thumbnail: 'image/Maternity Shoot/ABP05999 Logo_1_11zon_1_11zon.webp',
+    image: 'image/Maternity Shoot/ABP05999 Logo_1_11zon_1_11zon.webp',
     label: 'Maternity Shoot 1',
     category: 'Maternity Shoot'
   },
   {
-    thumbnail: 'image/Maternity Shoot/ABP06330_2_11zon.webp',
-    image: 'image/Maternity Shoot/ABP06330_2_11zon.webp',
+    thumbnail: 'image/Maternity Shoot/ABP06330_2_11zon_2_11zon.webp',
+    image: 'image/Maternity Shoot/ABP06330_2_11zon_2_11zon.webp',
     label: 'Maternity Shoot 2',
     category: 'Maternity Shoot'
   },
   {
-    thumbnail: 'image/Maternity Shoot/DSC04614 Logo_3_11zon.webp',
-    image: 'image/Maternity Shoot/DSC04614 Logo_3_11zon.webp',
+    thumbnail: 'image/Maternity Shoot/DSC04614 Logo_3_11zon_3_11zon.webp',
+    image: 'image/Maternity Shoot/DSC04614 Logo_3_11zon_3_11zon.webp',
     label: 'Maternity Shoot 3',
     category: 'Maternity Shoot'
   },
   {
-    thumbnail: 'image/Maternity Shoot/DSC04721_4_11zon.webp',
-    image: 'image/Maternity Shoot/DSC04721_4_11zon.webp',
+    thumbnail: 'image/Maternity Shoot/DSC04721_4_11zon_4_11zon.webp',
+    image: 'image/Maternity Shoot/DSC04721_4_11zon_4_11zon.webp',
     label: 'Maternity Shoot 4',
     category: 'Maternity Shoot'
   },
   {
-    thumbnail: 'image/Maternity Shoot/DSC04737_5_11zon.webp',
-    image: 'image/Maternity Shoot/DSC04737_5_11zon.webp',
+    thumbnail: 'image/Maternity Shoot/DSC04737_5_11zon_5_11zon.webp',
+    image: 'image/Maternity Shoot/DSC04737_5_11zon_5_11zon.webp',
     label: 'Maternity Shoot 5',
     category: 'Maternity Shoot'
   },
   {
-    thumbnail: 'image/Maternity Shoot/DSC04821_6_11zon.webp',
-    image: 'image/Maternity Shoot/DSC04821_6_11zon.webp',
+    thumbnail: 'image/Maternity Shoot/DSC04821_6_11zon_6_11zon.webp',
+    image: 'image/Maternity Shoot/DSC04821_6_11zon_6_11zon.webp',
     label: 'Maternity Shoot 6',
     category: 'Maternity Shoot'
   },
   {
-    thumbnail: 'image/Maternity Shoot/SAVE_20240924_133845_7_11zon.webp',
-    image: 'image/Maternity Shoot/SAVE_20240924_133845_7_11zon.webp',
+    thumbnail: 'image/Maternity Shoot/SAVE_20240924_133845_7_11zon_7_11zon.webp',
+    image: 'image/Maternity Shoot/SAVE_20240924_133845_7_11zon_7_11zon.webp',
     label: 'Maternity Shoot 7',
     category: 'Maternity Shoot'
   },
-  // --- New Born (all images from folder) ---
+  // New Born images
   {
-    thumbnail: 'image/New Born/SAVE_20240911_203022_compressed_1_11zon.webp',
-    image: 'image/New Born/SAVE_20240911_203022_compressed_1_11zon.webp',
+    thumbnail: 'image/New Born/SAVE_20240911_203022_compressed_1_11zon_1_11zon.webp',
+    image: 'image/New Born/SAVE_20240911_203022_compressed_1_11zon_1_11zon.webp',
     label: 'New Born 1',
     category: 'New Born'
   },
   {
-    thumbnail: 'image/New Born/SAVE_20240911_203030_compressed_2_11zon.webp',
-    image: 'image/New Born/SAVE_20240911_203030_compressed_2_11zon.webp',
+    thumbnail: 'image/New Born/SAVE_20240911_203030_compressed_2_11zon_2_11zon.webp',
+    image: 'image/New Born/SAVE_20240911_203030_compressed_2_11zon_2_11zon.webp',
     label: 'New Born 2',
     category: 'New Born'
   },
   {
-    thumbnail: 'image/New Born/SAVE_20240912_204409_compressed_3_11zon.webp',
-    image: 'image/New Born/SAVE_20240912_204409_compressed_3_11zon.webp',
+    thumbnail: 'image/New Born/SAVE_20240912_204409_compressed_3_11zon_3_11zon.webp',
+    image: 'image/New Born/SAVE_20240912_204409_compressed_3_11zon_3_11zon.webp',
     label: 'New Born 3',
     category: 'New Born'
   },
   {
-    thumbnail: 'image/New Born/SAVE_20240912_204419_compressed_4_11zon.webp',
-    image: 'image/New Born/SAVE_20240912_204419_compressed_4_11zon.webp',
+    thumbnail: 'image/New Born/SAVE_20240912_204419_compressed_4_11zon_4_11zon.webp',
+    image: 'image/New Born/SAVE_20240912_204419_compressed_4_11zon_4_11zon.webp',
     label: 'New Born 4',
     category: 'New Born'
   },
   {
-    thumbnail: 'image/New Born/SAVE_20240914_214641_compressed_5_11zon.webp',
-    image: 'image/New Born/SAVE_20240914_214641_compressed_5_11zon.webp',
+    thumbnail: 'image/New Born/SAVE_20240914_214641_compressed_5_11zon_5_11zon.webp',
+    image: 'image/New Born/SAVE_20240914_214641_compressed_5_11zon_5_11zon.webp',
     label: 'New Born 5',
     category: 'New Born'
   },
   {
-    thumbnail: 'image/New Born/SAVE_20241031_125823_compressed_6_11zon.webp',
-    image: 'image/New Born/SAVE_20241031_125823_compressed_6_11zon.webp',
+    thumbnail: 'image/New Born/SAVE_20241031_125823_compressed_6_11zon_6_11zon.webp',
+    image: 'image/New Born/SAVE_20241031_125823_compressed_6_11zon_6_11zon.webp',
     label: 'New Born 6',
     category: 'New Born'
   },
   {
-    thumbnail: 'image/New Born/SAVE_20250130_191053_compressed_7_11zon.webp',
-    image: 'image/New Born/SAVE_20250130_191053_compressed_7_11zon.webp',
+    thumbnail: 'image/New Born/SAVE_20250130_191053_compressed_7_11zon_7_11zon.webp',
+    image: 'image/New Born/SAVE_20250130_191053_compressed_7_11zon_7_11zon.webp',
     label: 'New Born 7',
     category: 'New Born'
   },
   {
-    thumbnail: 'image/New Born/SAVE_20250130_191118_compressed_8_11zon.webp',
-    image: 'image/New Born/SAVE_20250130_191118_compressed_8_11zon.webp',
+    thumbnail: 'image/New Born/SAVE_20250130_191118_compressed_8_11zon_8_11zon.webp',
+    image: 'image/New Born/SAVE_20250130_191118_compressed_8_11zon_8_11zon.webp',
     label: 'New Born 8',
     category: 'New Born'
   },
   {
-    thumbnail: 'image/New Born/SAVE_20250130_191123_compressed_9_11zon.webp',
-    image: 'image/New Born/SAVE_20250130_191123_compressed_9_11zon.webp',
+    thumbnail: 'image/New Born/SAVE_20250130_191123_compressed_9_11zon_9_11zon.webp',
+    image: 'image/New Born/SAVE_20250130_191123_compressed_9_11zon_9_11zon.webp',
     label: 'New Born 9',
     category: 'New Born'
   },
   {
-    thumbnail: 'image/New Born/SAVE_20250504_200014_compressed_10_11zon.webp',
-    image: 'image/New Born/SAVE_20250504_200014_compressed_10_11zon.webp',
+    thumbnail: 'image/New Born/SAVE_20250504_200014_compressed_10_11zon_10_11zon.webp',
+    image: 'image/New Born/SAVE_20250504_200014_compressed_10_11zon_10_11zon.webp',
     label: 'New Born 10',
     category: 'New Born'
   },
   {
-    thumbnail: 'image/New Born/SAVE_20250504_200020_compressed_11_11zon.webp',
-    image: 'image/New Born/SAVE_20250504_200020_compressed_11_11zon.webp',
+    thumbnail: 'image/New Born/SAVE_20250504_200020_compressed_11_11zon_11_11zon.webp',
+    image: 'image/New Born/SAVE_20250504_200020_compressed_11_11zon_11_11zon.webp',
     label: 'New Born 11',
     category: 'New Born'
   },
   {
-    thumbnail: 'image/New Born/SAVE_20250504_200027_compressed_12_11zon.webp',
-    image: 'image/New Born/SAVE_20250504_200027_compressed_12_11zon.webp',
+    thumbnail: 'image/New Born/SAVE_20250504_200027_compressed_12_11zon_12_11zon.webp',
+    image: 'image/New Born/SAVE_20250504_200027_compressed_12_11zon_12_11zon.webp',
     label: 'New Born 12',
     category: 'New Born'
   },
   {
-    thumbnail: 'image/New Born/SAVE_20250504_200231_compressed_13_11zon.webp',
-    image: 'image/New Born/SAVE_20250504_200231_compressed_13_11zon.webp',
+    thumbnail: 'image/New Born/SAVE_20250504_200231_compressed_13_11zon_13_11zon.webp',
+    image: 'image/New Born/SAVE_20250504_200231_compressed_13_11zon_13_11zon.webp',
     label: 'New Born 13',
     category: 'New Born'
   },
   {
-    thumbnail: 'image/New Born/SAVE_20250504_200241_compressed_14_11zon.webp',
-    image: 'image/New Born/SAVE_20250504_200241_compressed_14_11zon.webp',
+    thumbnail: 'image/New Born/SAVE_20250504_200241_compressed_14_11zon_14_11zon.webp',
+    image: 'image/New Born/SAVE_20250504_200241_compressed_14_11zon_14_11zon.webp',
     label: 'New Born 14',
     category: 'New Born'
   },
   {
-    thumbnail: 'image/New Born/SAVE_20250504_200248_compressed_15_11zon.webp',
-    image: 'image/New Born/SAVE_20250504_200248_compressed_15_11zon.webp',
+    thumbnail: 'image/New Born/SAVE_20250504_200248_compressed_15_11zon_15_11zon.webp',
+    image: 'image/New Born/SAVE_20250504_200248_compressed_15_11zon_15_11zon.webp',
     label: 'New Born 15',
     category: 'New Born'
   },
   {
-    thumbnail: 'image/New Born/SAVE_20250504_200257_compressed_16_11zon.webp',
-    image: 'image/New Born/SAVE_20250504_200257_compressed_16_11zon.webp',
+    thumbnail: 'image/New Born/SAVE_20250504_200257_compressed_16_11zon_16_11zon.webp',
+    image: 'image/New Born/SAVE_20250504_200257_compressed_16_11zon_16_11zon.webp',
     label: 'New Born 16',
     category: 'New Born'
   },
   {
-    thumbnail: 'image/New Born/SAVE_20250509_101639_compressed_17_11zon.webp',
-    image: 'image/New Born/SAVE_20250509_101639_compressed_17_11zon.webp',
+    thumbnail: 'image/New Born/SAVE_20250509_101639_compressed_17_11zon_17_11zon.webp',
+    image: 'image/New Born/SAVE_20250509_101639_compressed_17_11zon_17_11zon.webp',
     label: 'New Born 17',
     category: 'New Born'
   },
-  // --- Festival (all images from folder) ---
+  // Baby Shoots images
   {
-    thumbnail: 'image/festival/DSC04248_compressed_1_11zon.webp',
-    image: 'image/festival/DSC04248_compressed_1_11zon.webp',
+    thumbnail: 'image/Baby Shoots/DSC05880-min_1_11zon.webp',
+    image: 'image/Baby Shoots/DSC05880-min_1_11zon.webp',
+    label: 'Baby Shoot 1',
+    category: 'Baby Shoots'
+  },
+  {
+    thumbnail: 'image/Baby Shoots/SAVE_20240819_222506-min_2_11zon.webp',
+    image: 'image/Baby Shoots/SAVE_20240819_222506-min_2_11zon.webp',
+    label: 'Baby Shoot 2',
+    category: 'Baby Shoots'
+  },
+  {
+    thumbnail: 'image/Baby Shoots/SAVE_20240925_154029-min_3_11zon.webp',
+    image: 'image/Baby Shoots/SAVE_20240925_154029-min_3_11zon.webp',
+    label: 'Baby Shoot 3',
+    category: 'Baby Shoots'
+  },
+  {
+    thumbnail: 'image/Baby Shoots/SAVE_20240925_154037-min_4_11zon.webp',
+    image: 'image/Baby Shoots/SAVE_20240925_154037-min_4_11zon.webp',
+    label: 'Baby Shoot 4',
+    category: 'Baby Shoots'
+  },
+  {
+    thumbnail: 'image/Baby Shoots/SAVE_20241022_123509-min_5_11zon.webp',
+    image: 'image/Baby Shoots/SAVE_20241022_123509-min_5_11zon.webp',
+    label: 'Baby Shoot 5',
+    category: 'Baby Shoots'
+  },
+  {
+    thumbnail: 'image/Baby Shoots/SAVE_20241022_123521-min_6_11zon.webp',
+    image: 'image/Baby Shoots/SAVE_20241022_123521-min_6_11zon.webp',
+    label: 'Baby Shoot 6',
+    category: 'Baby Shoots'
+  },
+  {
+    thumbnail: 'image/Baby Shoots/SAVE_20241022_123537-min_7_11zon.webp',
+    image: 'image/Baby Shoots/SAVE_20241022_123537-min_7_11zon.webp',
+    label: 'Baby Shoot 7',
+    category: 'Baby Shoots'
+  },
+  {
+    thumbnail: 'image/Baby Shoots/SAVE_20241127_214936-min_8_11zon.webp',
+    image: 'image/Baby Shoots/SAVE_20241127_214936-min_8_11zon.webp',
+    label: 'Baby Shoot 8',
+    category: 'Baby Shoots'
+  },
+  {
+    thumbnail: 'image/Baby Shoots/SAVE_20250205_130119-min_9_11zon.webp',
+    image: 'image/Baby Shoots/SAVE_20250205_130119-min_9_11zon.webp',
+    label: 'Baby Shoot 9',
+    category: 'Baby Shoots'
+  },
+  {
+    thumbnail: 'image/Baby Shoots/SAVE_20250206_081640-min_10_11zon.webp',
+    image: 'image/Baby Shoots/SAVE_20250206_081640-min_10_11zon.webp',
+    label: 'Baby Shoot 10',
+    category: 'Baby Shoots'
+  },
+  {
+    thumbnail: 'image/Baby Shoots/SAVE_20250206_081648-min_11_11zon.webp',
+    image: 'image/Baby Shoots/SAVE_20250206_081648-min_11_11zon.webp',
+    label: 'Baby Shoot 11',
+    category: 'Baby Shoots'
+  },
+  {
+    thumbnail: 'image/Baby Shoots/SAVE_20250306_104604-min_12_11zon.webp',
+    image: 'image/Baby Shoots/SAVE_20250306_104604-min_12_11zon.webp',
+    label: 'Baby Shoot 12',
+    category: 'Baby Shoots'
+  },
+  {
+    thumbnail: 'image/Baby Shoots/SAVE_20250309_195742-min_13_11zon.webp',
+    image: 'image/Baby Shoots/SAVE_20250309_195742-min_13_11zon.webp',
+    label: 'Baby Shoot 13',
+    category: 'Baby Shoots'
+  },
+  {
+    thumbnail: 'image/Baby Shoots/SAVE_20250309_195800-min_14_11zon.webp',
+    image: 'image/Baby Shoots/SAVE_20250309_195800-min_14_11zon.webp',
+    label: 'Baby Shoot 14',
+    category: 'Baby Shoots'
+  },
+  {
+    thumbnail: 'image/Baby Shoots/SAVE_20250328_144028-min_15_11zon.webp',
+    image: 'image/Baby Shoots/SAVE_20250328_144028-min_15_11zon.webp',
+    label: 'Baby Shoot 15',
+    category: 'Baby Shoots'
+  },
+  {
+    thumbnail: 'image/Baby Shoots/SAVE_20250328_152510-min_16_11zon.webp',
+    image: 'image/Baby Shoots/SAVE_20250328_152510-min_16_11zon.webp',
+    label: 'Baby Shoot 16',
+    category: 'Baby Shoots'
+  },
+  {
+    thumbnail: 'image/Baby Shoots/SAVE_20250328_152522-min_17_11zon.webp',
+    image: 'image/Baby Shoots/SAVE_20250328_152522-min_17_11zon.webp',
+    label: 'Baby Shoot 17',
+    category: 'Baby Shoots'
+  },
+  {
+    thumbnail: 'image/Baby Shoots/SAVE_20250328_244554-min_18_11zon.webp',
+    image: 'image/Baby Shoots/SAVE_20250328_244554-min_18_11zon.webp',
+    label: 'Baby Shoot 18',
+    category: 'Baby Shoots'
+  },
+  {
+    thumbnail: 'image/Baby Shoots/SAVE_20250328_244604-min_19_11zon.webp',
+    image: 'image/Baby Shoots/SAVE_20250328_244604-min_19_11zon.webp',
+    label: 'Baby Shoot 19',
+    category: 'Baby Shoots'
+  },
+  // Festival images
+  {
+    thumbnail: 'image/festival/DSC04248_compressed_1_11zon_1_11zon.webp',
+    image: 'image/festival/DSC04248_compressed_1_11zon_1_11zon.webp',
     label: 'Festival 1',
     category: 'Festival'
   },
   {
-    thumbnail: 'image/festival/DSC05086_compressed_2_11zon.webp',
-    image: 'image/festival/DSC05086_compressed_2_11zon.webp',
+    thumbnail: 'image/festival/DSC05086_compressed_2_11zon_2_11zon.webp',
+    image: 'image/festival/DSC05086_compressed_2_11zon_2_11zon.webp',
     label: 'Festival 2',
     category: 'Festival'
   },
   {
-    thumbnail: 'image/festival/P1137672_compressed_3_11zon.webp',
-    image: 'image/festival/P1137672_compressed_3_11zon.webp',
+    thumbnail: 'image/festival/P1137672_compressed_3_11zon_3_11zon.webp',
+    image: 'image/festival/P1137672_compressed_3_11zon_3_11zon.webp',
     label: 'Festival 3',
     category: 'Festival'
   },
   {
-    thumbnail: 'image/festival/P1138193_compressed_4_11zon.webp',
-    image: 'image/festival/P1138193_compressed_4_11zon.webp',
+    thumbnail: 'image/festival/P1138193_compressed_4_11zon_4_11zon.webp',
+    image: 'image/festival/P1138193_compressed_4_11zon_4_11zon.webp',
     label: 'Festival 4',
     category: 'Festival'
   },
   {
-    thumbnail: 'image/festival/P1138369_compressed_5_11zon.webp',
-    image: 'image/festival/P1138369_compressed_5_11zon.webp',
+    thumbnail: 'image/festival/P1138369_compressed_5_11zon_5_11zon.webp',
+    image: 'image/festival/P1138369_compressed_5_11zon_5_11zon.webp',
     label: 'Festival 5',
     category: 'Festival'
   },
   {
-    thumbnail: 'image/festival/P1138409_compressed_6_11zon.webp',
-    image: 'image/festival/P1138409_compressed_6_11zon.webp',
+    thumbnail: 'image/festival/P1138409_compressed_6_11zon_6_11zon.webp',
+    image: 'image/festival/P1138409_compressed_6_11zon_6_11zon.webp',
     label: 'Festival 6',
     category: 'Festival'
   },
   {
-    thumbnail: 'image/festival/P1138934_compressed_7_11zon.webp',
-    image: 'image/festival/P1138934_compressed_7_11zon.webp',
+    thumbnail: 'image/festival/P1138934_compressed_7_11zon_7_11zon.webp',
+    image: 'image/festival/P1138934_compressed_7_11zon_7_11zon.webp',
     label: 'Festival 7',
     category: 'Festival'
   },
   {
-    thumbnail: 'image/festival/P1138962_compressed_8_11zon.webp',
-    image: 'image/festival/P1138962_compressed_8_11zon.webp',
+    thumbnail: 'image/festival/P1138962_compressed_8_11zon_8_11zon.webp',
+    image: 'image/festival/P1138962_compressed_8_11zon_8_11zon.webp',
     label: 'Festival 8',
     category: 'Festival'
   },
   {
-    thumbnail: 'image/festival/P1139025_compressed_9_11zon.webp',
-    image: 'image/festival/P1139025_compressed_9_11zon.webp',
+    thumbnail: 'image/festival/P1139025_compressed_9_11zon_9_11zon.webp',
+    image: 'image/festival/P1139025_compressed_9_11zon_9_11zon.webp',
     label: 'Festival 9',
     category: 'Festival'
   },
   {
-    thumbnail: 'image/festival/P1139037_compressed_10_11zon.webp',
-    image: 'image/festival/P1139037_compressed_10_11zon.webp',
+    thumbnail: 'image/festival/P1139037_compressed_10_11zon_10_11zon.webp',
+    image: 'image/festival/P1139037_compressed_10_11zon_10_11zon.webp',
     label: 'Festival 10',
     category: 'Festival'
   },
   {
-    thumbnail: 'image/festival/SAVE_20240825_232634-min_compressed_11_11zon.webp',
-    image: 'image/festival/SAVE_20240825_232634-min_compressed_11_11zon.webp',
+    thumbnail: 'image/festival/SAVE_20240825_232634-min_compressed_11_11zon_11_11zon.webp',
+    image: 'image/festival/SAVE_20240825_232634-min_compressed_11_11zon_11_11zon.webp',
     label: 'Festival 11',
     category: 'Festival'
   },
   {
-    thumbnail: 'image/festival/SAVE_20240825_232801_compressed_12_11zon.webp',
-    image: 'image/festival/SAVE_20240825_232801_compressed_12_11zon.webp',
+    thumbnail: 'image/festival/SAVE_20240825_232801_compressed_12_11zon_12_11zon.webp',
+    image: 'image/festival/SAVE_20240825_232801_compressed_12_11zon_12_11zon.webp',
     label: 'Festival 12',
     category: 'Festival'
   },
   {
-    thumbnail: 'image/festival/SAVE_20240825_232815_compressed_13_11zon.webp',
-    image: 'image/festival/SAVE_20240825_232815_compressed_13_11zon.webp',
+    thumbnail: 'image/festival/SAVE_20240825_232815_compressed_13_11zon_13_11zon.webp',
+    image: 'image/festival/SAVE_20240825_232815_compressed_13_11zon_13_11zon.webp',
     label: 'Festival 13',
     category: 'Festival'
   },
   {
-    thumbnail: 'image/festival/SAVE_20250225_155609_compressed_14_11zon.webp',
-    image: 'image/festival/SAVE_20250225_155609_compressed_14_11zon.webp',
+    thumbnail: 'image/festival/SAVE_20250225_155609_compressed_14_11zon_14_11zon.webp',
+    image: 'image/festival/SAVE_20250225_155609_compressed_14_11zon_14_11zon.webp',
     label: 'Festival 14',
     category: 'Festival'
   },
   {
-    thumbnail: 'image/festival/SAVE_20250226_190800_compressed_15_11zon.webp',
-    image: 'image/festival/SAVE_20250226_190800_compressed_15_11zon.webp',
+    thumbnail: 'image/festival/SAVE_20250226_190800_compressed_15_11zon_15_11zon.webp',
+    image: 'image/festival/SAVE_20250226_190800_compressed_15_11zon_15_11zon.webp',
     label: 'Festival 15',
     category: 'Festival'
   }
 ];
 
-const categories = ['Baby Shoots', 'New Born', 'Maternity Shoot', 'Festival'];
+const categories = ['All', 'Maternity Shoot', 'New Born', 'Baby Shoots', 'Festival'];
+
+// Add scroll handling for header visibility
+let lastScrollTop = 0;
+const header = document.querySelector('header');
+const mainNav = document.querySelector('.main-nav');
+
+window.addEventListener('scroll', () => {
+  const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+  
+  // Prevent header from disappearing
+  if (header && mainNav) {
+    header.style.transform = 'translateZ(0)';
+    mainNav.style.transform = 'translateZ(0)';
+  }
+  
+  lastScrollTop = scrollTop;
+}, { passive: true });
