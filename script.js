@@ -6,12 +6,32 @@ let startTime = Date.now();
 // Enhanced image cache with memory management
 const imageCache = new Map();
 const MAX_CACHE_SIZE = 50; // Maximum number of images to keep in cache
+const SCROLL_THROTTLE = 8; // ~120fps for high refresh rate screens
+let lastScrollTime = 0;
+let scrollTimeout = null;
+let isHighRefreshRate = window.matchMedia('(min-resolution: 120dpi)').matches || 
+                       window.matchMedia('(min-resolution: 2dppx)').matches;
+
+// Adjust throttle based on screen refresh rate
+const getScrollThrottle = () => {
+  if (isHighRefreshRate) {
+    return 8; // ~120fps
+  }
+  return 16; // ~60fps
+};
 
 // Function to manage cache size
 function manageCacheSize() {
   if (imageCache.size > MAX_CACHE_SIZE) {
     const keysToDelete = Array.from(imageCache.keys()).slice(0, imageCache.size - MAX_CACHE_SIZE);
-    keysToDelete.forEach(key => imageCache.delete(key));
+    keysToDelete.forEach(key => {
+      const img = imageCache.get(key);
+      if (img) {
+        img.src = ''; // Clear image source
+        img.remove(); // Remove from DOM if present
+      }
+      imageCache.delete(key);
+    });
   }
 }
 
@@ -58,6 +78,28 @@ function createLoadingAnimation(container) {
   return loadingDiv;
 }
 
+// Throttled scroll handler optimized for high refresh rate
+function handleScroll() {
+  const now = Date.now();
+  const throttle = getScrollThrottle();
+  
+  if (now - lastScrollTime >= throttle) {
+    lastScrollTime = now;
+    requestAnimationFrame(() => {
+      // Update header visibility with hardware acceleration
+      const header = document.querySelector('header');
+      const mainNav = document.querySelector('.main-nav');
+      if (header && mainNav) {
+        header.style.transform = 'translate3d(0, 0, 0)';
+        mainNav.style.transform = 'translate3d(0, 0, 0)';
+      }
+    });
+  }
+}
+
+// Optimize scroll event listener with passive flag
+window.addEventListener('scroll', handleScroll, { passive: true });
+
 // Enhanced preload and cache function with retry logic
 function preloadAndCacheImage(src, retries = 3) {
   if (imageCache.has(src)) {
@@ -73,13 +115,6 @@ function preloadAndCacheImage(src, retries = 3) {
     }
     
     img.onload = () => {
-      // Create a canvas to optimize the image
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      canvas.width = img.width;
-      canvas.height = img.height;
-      ctx.drawImage(img, 0, 0);
-      
       // Store the optimized image
       imageCache.set(src, img);
       manageCacheSize();
@@ -89,18 +124,74 @@ function preloadAndCacheImage(src, retries = 3) {
     img.onerror = () => {
       console.error(`Failed to load image: ${src}`);
       if (retries > 0) {
-        console.log(`Retrying image load for: ${src}. Retries left: ${retries}`);
         setTimeout(() => {
           preloadAndCacheImage(src, retries - 1).then(resolve).catch(reject);
-        }, 1000); // Wait 1 second before retrying
+        }, 1000);
       } else {
-        console.error(`Max retries reached for image: ${src}`);
         reject(new Error(`Failed to load image after multiple retries: ${src}`));
       }
     };
     
     img.src = src;
   });
+}
+
+// Function to handle lazy loading with improved performance
+function handleLazyLoad() {
+  const images = document.querySelectorAll('img[loading="lazy"]:not(.loaded)');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const img = entry.target;
+        if (!img.classList.contains('loading') && !img.classList.contains('loaded') && img.dataset.src) {
+          img.classList.add('loading');
+
+          const loadingAnimation = img.parentElement.querySelector('.image-loading-animation');
+
+          // Use cached image if available
+          if (imageCache.has(img.dataset.src)) {
+            const cachedImg = imageCache.get(img.dataset.src);
+            img.src = cachedImg.src;
+            img.classList.add('loaded');
+            img.classList.remove('loading');
+            
+            if (loadingAnimation) {
+              loadingAnimation.style.opacity = '0';
+              setTimeout(() => loadingAnimation.remove(), isHighRefreshRate ? 150 : 300);
+            }
+          } else {
+            // Load new image
+            preloadAndCacheImage(img.dataset.src)
+              .then(cachedImg => {
+                img.src = cachedImg.src;
+                img.classList.add('loaded');
+                img.classList.remove('loading');
+                
+                if (loadingAnimation) {
+                  loadingAnimation.style.opacity = '0';
+                  setTimeout(() => loadingAnimation.remove(), isHighRefreshRate ? 150 : 300);
+                }
+              })
+              .catch(() => {
+                img.src = 'image/placeholder.jpg';
+                img.alt = 'Image not available';
+                img.classList.remove('loading');
+                
+                if (loadingAnimation) {
+                  loadingAnimation.remove();
+                }
+              });
+          }
+        }
+        observer.unobserve(img);
+      }
+    });
+  }, {
+    rootMargin: '100px 0px',
+    threshold: 0.1
+  });
+
+  images.forEach(img => observer.observe(img));
 }
 
 // Function to check if element is in viewport
@@ -133,73 +224,6 @@ function preloadVisibleImages() {
     });
   }, {
     rootMargin: '300px 0px',
-    threshold: 0.1
-  });
-
-  images.forEach(img => observer.observe(img));
-}
-
-// Optimize scroll performance
-let scrollTimeout;
-let isScrolling = false;
-
-window.addEventListener('scroll', () => {
-  if (!isScrolling) {
-    isScrolling = true;
-    requestAnimationFrame(() => {
-      // Your scroll handling code here
-      isScrolling = false;
-    });
-  }
-}, { passive: true });
-
-// Function to handle lazy loading
-function handleLazyLoad() {
-  const images = document.querySelectorAll('img[loading="lazy"]:not(.loaded)');
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        const img = entry.target;
-        if (!img.classList.contains('loading') && !img.classList.contains('loaded') && img.dataset.src) {
-          img.classList.add('loading');
-
-          const loadingAnimation = img.parentElement.querySelector('.image-loading-animation');
-
-          // Load image with natural dimensions
-          const tempImg = new Image();
-          tempImg.onload = () => {
-            // Set the actual image source
-            img.src = img.dataset.src;
-            img.classList.add('loaded');
-            img.classList.remove('loading');
-            
-            // Remove loading animation
-            if (loadingAnimation) {
-              loadingAnimation.style.opacity = '0';
-              setTimeout(() => {
-                loadingAnimation.remove();
-              }, 300);
-            }
-          };
-          
-          tempImg.onerror = () => {
-            console.error('Failed to load image:', img.dataset.src);
-            img.src = 'image/placeholder.jpg';
-            img.alt = 'Image not available';
-            img.classList.remove('loading');
-            
-            if (loadingAnimation) {
-              loadingAnimation.remove();
-            }
-          };
-          
-          tempImg.src = img.dataset.src;
-        }
-        observer.unobserve(img);
-      }
-    });
-  }, {
-    rootMargin: '50px 0px',
     threshold: 0.1
   });
 
@@ -239,6 +263,14 @@ async function renderGallery(selectedCategory = 'All') {
     // Create initial gallery items with performance optimization
     const fragment = document.createDocumentFragment();
     
+    // Preload first batch of images
+    const preloadPromises = initialItems.map(item => 
+      preloadAndCacheImage(item.thumbnail || item.image)
+    );
+
+    // Wait for initial batch to preload
+    await Promise.allSettled(preloadPromises);
+    
     initialItems.forEach(item => {
       const div = document.createElement('div');
       div.className = 'item';
@@ -267,8 +299,6 @@ async function renderGallery(selectedCategory = 'All') {
     // Use requestAnimationFrame for smooth rendering
     requestAnimationFrame(() => {
       gallery.appendChild(fragment);
-      
-      // Initialize lazy loading
       handleLazyLoad();
     });
 
@@ -902,20 +932,3 @@ const portfolioItems = [
 ];
 
 const categories = ['All', 'Maternity Shoot', 'New Born', 'Baby Shoots', 'Festival'];
-
-// Add scroll handling for header visibility
-let lastScrollTop = 0;
-const header = document.querySelector('header');
-const mainNav = document.querySelector('.main-nav');
-
-window.addEventListener('scroll', () => {
-  const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-  
-  // Prevent header from disappearing
-  if (header && mainNav) {
-    header.style.transform = 'translateZ(0)';
-    mainNav.style.transform = 'translateZ(0)';
-  }
-  
-  lastScrollTop = scrollTop;
-}, { passive: true });

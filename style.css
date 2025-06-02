@@ -8,6 +8,15 @@
   --shadow-color: rgba(0, 0, 0, 0.1);
   --transition-duration: 2s;
   --path-length: 157px;
+  --animation-duration: 0.3s;
+  --high-refresh-rate: 120;
+}
+
+/* Detect high refresh rate screens */
+@media (min-resolution: 120dpi), (min-resolution: 2dppx) {
+  :root {
+    --animation-duration: 0.15s;
+  }
 }
 
 html {
@@ -37,11 +46,13 @@ header {
   position: sticky;
   top: 0;
   z-index: 1000;
-  transform: translateZ(0);
-  -webkit-transform: translateZ(0);
+  transform: translate3d(0, 0, 0);
+  -webkit-transform: translate3d(0, 0, 0);
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
   will-change: transform;
+  contain: layout paint style;
+  content-visibility: auto;
 }
 
 header h1 {
@@ -65,11 +76,13 @@ header h1 {
   margin: 0 auto;
   max-width: 1920px;
   box-sizing: border-box;
-  transform: translateZ(0);
-  -webkit-transform: translateZ(0);
+  transform: translate3d(0, 0, 0);
+  -webkit-transform: translate3d(0, 0, 0);
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
   will-change: transform;
+  contain: layout paint style;
+  content-visibility: auto;
 }
 
 .logo {
@@ -257,21 +270,22 @@ header h1 {
   max-width: 1600px;
   margin: 0 auto;
   box-sizing: border-box;
-  contain: layout paint;
+  contain: layout paint style;
   min-height: 200px;
   opacity: 0;
-  animation: fadeIn 0.5s ease-out forwards;
-  transform: translateZ(0);
+  animation: fadeIn var(--animation-duration) ease-out forwards;
+  transform: translate3d(0, 0, 0);
   will-change: transform;
   backface-visibility: hidden;
   position: relative;
   z-index: 1;
   margin-top: 2rem;
-  -webkit-transform: translateZ(0);
+  -webkit-transform: translate3d(0, 0, 0);
   -webkit-backface-visibility: hidden;
   perspective: 1000;
   -webkit-perspective: 1000;
   isolation: isolate;
+  content-visibility: auto;
 }
 
 .item {
@@ -286,19 +300,20 @@ header h1 {
   text-align: center;
   padding: 0;
   cursor: pointer;
-  transition: transform 0.2s ease-out;
+  transition: transform var(--animation-duration) ease-out;
   position: relative;
   will-change: transform;
-  transform: translateZ(0);
+  transform: translate3d(0, 0, 0);
   backface-visibility: hidden;
   opacity: 0;
-  animation: fadeIn 0.3s ease-out forwards;
-  contain: layout paint;
-  -webkit-transform: translateZ(0);
+  animation: fadeIn var(--animation-duration) ease-out forwards;
+  contain: layout paint style;
+  -webkit-transform: translate3d(0, 0, 0);
   -webkit-backface-visibility: hidden;
   perspective: 1000;
   -webkit-perspective: 1000;
   isolation: isolate;
+  content-visibility: auto;
 }
 
 .gallery-image {
@@ -310,14 +325,14 @@ header h1 {
   padding: 0;
   object-fit: cover;
   will-change: opacity;
-  transform: translateZ(0);
+  transform: translate3d(0, 0, 0);
   backface-visibility: hidden;
   content-visibility: auto;
   opacity: 0;
-  transition: opacity 0.3s ease-out;
+  transition: opacity var(--animation-duration) ease-out;
   background: #f5f5f5;
-  contain: layout paint;
-  -webkit-transform: translateZ(0);
+  contain: layout paint style;
+  -webkit-transform: translate3d(0, 0, 0);
   -webkit-backface-visibility: hidden;
   perspective: 1000;
   -webkit-perspective: 1000;
@@ -346,9 +361,9 @@ header h1 {
   border-radius: 50%;
   padding: 8px;
   box-shadow: 0 2px 10px var(--shadow-color);
-  transition: opacity 0.3s ease-out;
+  transition: opacity var(--animation-duration) ease-out;
   will-change: opacity;
-  animation: pulse 1.5s ease-in-out infinite;
+  animation: pulse calc(var(--animation-duration) * 5) ease-in-out infinite;
   opacity: 1;
 }
 
@@ -359,11 +374,11 @@ header h1 {
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translate3d(0, 10px, 0);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translate3d(0, 0, 0);
   }
 }
 
@@ -492,7 +507,7 @@ footer {
   overflow: auto;
   will-change: opacity;
   opacity: 0;
-  transition: opacity 0.3s ease-out;
+  transition: opacity var(--animation-duration) ease-out;
 }
 
 .lightbox.active {
@@ -510,10 +525,10 @@ footer {
   left: 50%;
   transform: translate(-50%, -50%);
   cursor: zoom-in;
-  transition: transform 0.3s ease-out;
+  transition: transform var(--animation-duration) ease-out, opacity var(--animation-duration) ease-out;
   will-change: transform;
   opacity: 0;
-  transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+  transition: opacity var(--animation-duration) ease-out, transform var(--animation-duration) ease-out;
 }
 
 .lightbox.active .lightbox-content {
@@ -610,16 +625,32 @@ footer {
   }
   .gallery {
     columns: 2;
-    column-gap: 10px;
-    padding: 10px;
+    column-gap: 1rem;
+    padding: 1rem;
+    transform: translate3d(0, 0, 0);
+    -webkit-transform: translate3d(0, 0, 0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    perspective: 1000;
+    -webkit-perspective: 1000;
+    isolation: isolate;
+    contain: layout paint style;
+    content-visibility: auto;
   }
   .item {
-    margin-bottom: 10px;
+    margin-bottom: 1rem;
+    transform: translate3d(0, 0, 0);
+    -webkit-transform: translate3d(0, 0, 0);
+    isolation: isolate;
+    contain: layout paint style;
+    content-visibility: auto;
   }
   .gallery-image {
-    transform: translateZ(0);
-    -webkit-transform: translateZ(0);
+    transform: translate3d(0, 0, 0);
+    -webkit-transform: translate3d(0, 0, 0);
     isolation: isolate;
+    contain: layout paint style;
+    content-visibility: auto;
   }
 }
 
@@ -745,9 +776,11 @@ footer {
     margin-bottom: 10px;
   }
   .gallery-image {
-    transform: translateZ(0);
-    -webkit-transform: translateZ(0);
+    transform: translate3d(0, 0, 0);
+    -webkit-transform: translate3d(0, 0, 0);
     isolation: isolate;
+    contain: layout paint style;
+    content-visibility: auto;
   }
   .lightbox.active {
     padding: 0;
@@ -1264,11 +1297,13 @@ main {
   box-sizing: border-box;
   position: relative;
   z-index: 1;
-  transform: translateZ(0);
-  -webkit-transform: translateZ(0);
+  transform: translate3d(0, 0, 0);
+  -webkit-transform: translate3d(0, 0, 0);
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
   will-change: transform;
+  contain: layout paint style;
+  content-visibility: auto;
 }
 
 /* Responsive adjustments for large screens */
@@ -1423,26 +1458,32 @@ main {
     columns: 2;
     column-gap: 1rem;
     padding: 1rem;
-    transform: translateZ(0);
-    -webkit-transform: translateZ(0);
+    transform: translate3d(0, 0, 0);
+    -webkit-transform: translate3d(0, 0, 0);
     -webkit-backface-visibility: hidden;
     backface-visibility: hidden;
     perspective: 1000;
     -webkit-perspective: 1000;
     isolation: isolate;
+    contain: layout paint style;
+    content-visibility: auto;
   }
   
   .item {
     margin-bottom: 1rem;
-    transform: translateZ(0);
-    -webkit-transform: translateZ(0);
+    transform: translate3d(0, 0, 0);
+    -webkit-transform: translate3d(0, 0, 0);
     isolation: isolate;
+    contain: layout paint style;
+    content-visibility: auto;
   }
   
   .gallery-image {
-    transform: translateZ(0);
-    -webkit-transform: translateZ(0);
+    transform: translate3d(0, 0, 0);
+    -webkit-transform: translate3d(0, 0, 0);
     isolation: isolate;
+    contain: layout paint style;
+    content-visibility: auto;
   }
 }
 
@@ -1451,10 +1492,14 @@ main {
   .gallery {
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
+    contain: layout paint style;
+    content-visibility: auto;
   }
   
   .item {
     touch-action: manipulation;
+    contain: layout paint style;
+    content-visibility: auto;
   }
 }
 
@@ -1485,9 +1530,9 @@ main {
   border-radius: 50%;
   padding: 8px;
   box-shadow: 0 2px 10px var(--shadow-color);
-  transition: opacity 0.3s ease-out;
+  transition: opacity var(--animation-duration) ease-out;
   will-change: opacity;
-  animation: pulse 1.5s ease-in-out infinite;
+  animation: pulse calc(var(--animation-duration) * 5) ease-in-out infinite;
   opacity: 1;
 }
 
