@@ -70,19 +70,12 @@ header h1 {
   padding: 0.3rem 2rem;
   min-height: 40px;
   position: relative;
-  z-index: 200;
+  z-index: 1001;
   margin: 0;
   border-bottom: 1px solid var(--accent-color);
   margin: 0 auto;
   max-width: 1920px;
   box-sizing: border-box;
-  transform: translate3d(0, 0, 0);
-  -webkit-transform: translate3d(0, 0, 0);
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-  will-change: transform;
-  contain: layout paint style;
-  content-visibility: auto;
 }
 
 .logo {
@@ -91,6 +84,8 @@ header h1 {
   display: flex;
   align-items: center;
   gap: 15px;
+  position: relative;
+  z-index: 1001;
 }
 
 .logo picture {
@@ -654,217 +649,29 @@ footer {
   }
 }
 
-/* Mobile Navigation Improvements */
+/* Mobile Navigation Improvements (Consolidated) */
 @media (max-width: 768px) {
   .main-nav ul {
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    gap: 1rem;
-    margin-top: 0.5rem;
-    width: 100%;
-    background: var(--card-bg);
-    position: fixed;
-    top: 45px;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    box-shadow: 0 8px 24px var(--shadow-color);
-    padding: 2rem;
-    transition: transform 0.3s ease-in-out;
-    transform: translateY(-100%);
-    z-index: 250;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .main-nav ul.open {
-    display: flex;
-    transform: translateY(0);
-  }
-
-  .main-nav a {
-    font-size: 1.2rem;
-    padding: 1rem;
-    display: block;
-    width: 100%;
-    text-align: center;
-    border-radius: 8px;
-    transition: background-color 0.2s ease;
-  }
-
-  .main-nav a:focus {
-    outline: 2px solid var(--accent-color);
-    outline-offset: 2px;
-  }
-
-  .hamburger {
-    display: flex;
-    margin-left: auto;
-    width: 34px;
-    height: 34px;
-    padding: 10px;
-    border-radius: 8px;
-    transition: background-color 0.2s ease;
-  }
-
-  .hamburger:focus {
-    outline: 2px solid var(--accent-color);
-    outline-offset: 2px;
-  }
-
-  .hamburger span {
-    height: 3px;
-    margin: 6px 0;
-    transition: transform 0.3s ease;
-  }
-
-  .hamburger.open span:nth-child(1) {
-    transform: rotate(45deg) translate(6px, 6px);
-  }
-
-  .hamburger.open span:nth-child(2) {
-    opacity: 0;
-  }
-
-  .hamburger.open span:nth-child(3) {
-    transform: rotate(-45deg) translate(6px, -6px);
+    display: none; /* Hide on mobile */
   }
 }
 
-/* Touch Target Improvements */
-@media (max-width: 600px) {
-  .main-nav {
-    padding: 0.1rem 1rem;
-    min-height: 32px;
-  }
-  
-  .logo {
-    height: 60px;
-  }
-
-  .logo img {
-    height: 100%;
-  }
-
-  .logo-url {
-    font-size: 0.75rem;
-  }
-  
-  .logo-title {
-    font-size: 1rem;
-  }
-
-  .welcome {
-    height: 50vh;
-    min-height: 300px;
-  }
-  
-  .welcome h2 {
-    font-size: 1.2rem;
-  }
-  
-  .welcome p {
-    font-size: 1rem;
-  }
-  .gallery {
-    columns: 1;
-    column-gap: 10px;
-    padding: 10px;
-  }
-  .item {
-    margin-bottom: 10px;
-  }
-  .gallery-image {
-    transform: translate3d(0, 0, 0);
-    -webkit-transform: translate3d(0, 0, 0);
-    isolation: isolate;
-    contain: layout paint style;
-    content-visibility: auto;
-  }
-  .lightbox.active {
-    padding: 0;
+/* Ensure desktop navigation is shown and hamburger is hidden on larger screens */
+@media (min-width: 769px) {
+  .main-nav ul {
     display: flex;
-    justify-content: center;
-    align-items: center;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    width: 100%;
-    height: 100%;
+    transform: translateX(0);
+    visibility: visible;
   }
-  .lightbox-content {
-    max-width: 95%;
-    max-height: 80%;
-    margin: auto;
-    position: relative;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    object-fit: contain;
-  }
-  .close {
-    top: 10px;
-    right: 15px;
-    font-size: 30px;
-  }
-  #lightbox-caption {
-    font-size: 1rem;
-    bottom: 10px;
-  }
-  .gallery-filter button {
-    padding: 12px 20px;
-    margin: 4px;
-    min-height: 44px;
-  }
-  .social-icon {
-    padding: 16px;
-    min-width: 140px;
-    min-height: 44px;
-  }
-  .info-item {
-    padding: 12px;
-    min-height: 44px;
-  }
-  .hamburger {
-    display: flex;
-    height: 30px;
-    width: 30px;
-  }
+
+  /* Removed .hamburger, .mobile-menu-header, .close-menu styles */
 }
 
-.hamburger {
-  display: none;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  width: 36px;
-  height: 36px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0;
-  margin-left: auto;
-  z-index: 999;
-}
+/* Hamburger open animation styles */
+/* Removed .hamburger.open span styles */
 
-.hamburger span {
-  display: block;
-  height: 4px;
-  width: 100%;
-  background: #222;
-  border-radius: 2px;
-  margin: 5px 0;
-  transition: 0.3s;
-}
-
-@media (max-width: 600px) {
-  .hamburger {
-    display: flex;
-  }
-}
+/* Hide mobile menu specific elements on desktop */
+/* Removed .mobile-menu-header, .close-menu styles */
 
 .gallery-section {
   margin-bottom: 2.5rem;

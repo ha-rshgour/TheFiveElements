@@ -454,38 +454,6 @@ document.addEventListener('keydown', function(event) {
   }
 });
 
-// Improved mobile menu handling
-const hamburger = document.getElementById('hamburger');
-const navLinks = document.getElementById('nav-links');
-
-if (hamburger && navLinks) {
-  hamburger.addEventListener('click', () => {
-    hamburger.classList.toggle('open');
-    navLinks.classList.toggle('open');
-    document.body.style.overflow = navLinks.classList.contains('open') ? 'hidden' : '';
-  });
-
-  // Close menu when clicking outside
-  document.addEventListener('click', (e) => {
-    if (navLinks.classList.contains('open') && 
-        !navLinks.contains(e.target) && 
-        !hamburger.contains(e.target)) {
-      hamburger.classList.remove('open');
-      navLinks.classList.remove('open');
-      document.body.style.overflow = '';
-    }
-  });
-
-  // Close menu on escape key
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && navLinks.classList.contains('open')) {
-      hamburger.classList.remove('open');
-      navLinks.classList.remove('open');
-      document.body.style.overflow = '';
-    }
-  });
-}
-
 // Improved smooth scrolling with performance optimization
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
   anchor.addEventListener('click', function (e) {
@@ -723,6 +691,18 @@ const portfolioItems = [
     label: 'New Born 17',
     category: 'New Born'
   },
+  {
+    thumbnail: 'image/New Born/DSC09444_2_11zon.jpg',
+    image: 'image/New Born/DSC09444_2_11zon.jpg',
+    label: 'New Born 18',
+    category: 'New Born'
+  },
+  {
+    thumbnail: 'image/New Born/DSC09475 (1)_1_11zon.jpg',
+    image: 'image/New Born/DSC09475 (1)_1_11zon.jpg',
+    label: 'New Born 19',
+    category: 'New Born'
+  },
   // Baby Shoots images
   {
     thumbnail: 'image/Baby Shoots/DSC05880-min_1_11zon.webp',
@@ -836,6 +816,12 @@ const portfolioItems = [
     thumbnail: 'image/Baby Shoots/SAVE_20250328_244604-min_19_11zon.webp',
     image: 'image/Baby Shoots/SAVE_20250328_244604-min_19_11zon.webp',
     label: 'Baby Shoot 19',
+    category: 'Baby Shoots'
+  },
+  {
+    thumbnail: 'image/Baby Shoots/DSC01611 copy_4_11zon.jpg',
+    image: 'image/Baby Shoots/DSC01611 copy_4_11zon.jpg',
+    label: 'Baby Shoot 20',
     category: 'Baby Shoots'
   },
   // Festival images
