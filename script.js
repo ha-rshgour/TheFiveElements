@@ -246,6 +246,8 @@ async function renderGallery(selectedCategory = 'All') {
       );
     } else {
       itemsToShow = portfolioItems.filter(item => item.category === selectedCategory);
+      // Shuffle the items for non-All sections
+      itemsToShow = itemsToShow.sort(() => Math.random() - 0.5);
     }
 
     // Shuffle array for 'All' category
@@ -256,8 +258,8 @@ async function renderGallery(selectedCategory = 'All') {
     // Clear gallery
     gallery.innerHTML = '';
 
-    // For 'All' category, initially show only 12 images
-    const initialLoadCount = selectedCategory === 'All' ? 12 : itemsToShow.length;
+    // For 'All' category, initially show 30 images
+    const initialLoadCount = selectedCategory === 'All' ? 30 : itemsToShow.length;
     const initialItems = itemsToShow.slice(0, initialLoadCount);
 
     // Create initial gallery items with performance optimization
@@ -498,7 +500,7 @@ function updateGalleryDisplay() {
   
   if (selectedCategory === 'All') {
     items.forEach((item, index) => {
-      if (isExpanded || index < 12) {
+      if (isExpanded || index < 30) {
         item.style.display = 'block';
       } else {
         item.style.display = 'none';
@@ -512,7 +514,7 @@ function updateGalleryDisplay() {
 
   // Update button text and visibility
   if (showMoreBtn) {
-    if (selectedCategory === 'All' && items.length > 12) {
+    if (selectedCategory === 'All' && items.length > 30) {
       showMoreBtn.style.display = 'block';
       showMoreBtn.textContent = isExpanded ? 'Show Less' : 'Show More';
     } else {
@@ -822,6 +824,12 @@ const portfolioItems = [
     thumbnail: 'image/Baby Shoots/DSC01611 copy_4_11zon.jpg',
     image: 'image/Baby Shoots/DSC01611 copy_4_11zon.jpg',
     label: 'Baby Shoot 20',
+    category: 'Baby Shoots'
+  },
+  {
+    thumbnail: 'image/Baby Shoots/DSC00022_11zon.webp',
+    image: 'image/Baby Shoots/DSC00022_11zon.webp',
+    label: 'Baby Shoot 21',
     category: 'Baby Shoots'
   },
   // Festival images
