@@ -140,40 +140,19 @@ header h1 {
   background: var(--accent-color);
 }
 
+/* Clean .welcome section: no background-image at any screen size */
 .welcome {
-  background-color: var(--secondary-bg);
-  background-image: url('image/SAVE_20240725_190318.jpg');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
+  line-height: 0;
+  background: none !important;
+}
+
+.welcome img {
+  max-height: 80vh;
+  width: auto;
   max-width: 100%;
-  height: 80vh;
-  min-height: 500px;
-  max-height: 800px;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-  position: relative;
-}
-
-.welcome h2 {
-  margin-top: 0;
-  font-size: clamp(1.5rem, 4vw, 3rem);
-  color: var(--text-color);
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.welcome p {
-  color: #666;
-  font-size: clamp(1rem, 2vw, 1.3rem);
-  margin-top: 1rem;
-  max-width: 800px;
-  padding: 0 2rem;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+  display: block;
+  margin: 0 auto;
+  object-fit: contain;
 }
 
 /* Loading Animation Styles */
@@ -615,8 +594,22 @@ footer {
   }
 
   .welcome {
-    height: 60vh;
-    min-height: 400px;
+    width: 100vw;
+    margin: 0;
+    padding: 0;
+    min-height: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--primary-bg);
+  }
+  .welcome img {
+    max-height: 54vh;
+    width: auto;
+    max-width: 100%;
+    display: block;
+    margin: 0 auto;
+    object-fit: contain;
   }
   .gallery {
     columns: 2;
@@ -646,6 +639,28 @@ footer {
     isolation: isolate;
     contain: layout paint style;
     content-visibility: auto;
+  }
+}
+
+/* Use the TALL image for PORTRAIT (tall) screens */
+@media (max-width: 900px) and (orientation: portrait) {
+  .welcome {
+    background-image: url('image/mobile welcome.jpg');
+  }
+}
+
+/* Use the WIDE image for LANDSCAPE (wide) screens */
+@media (max-width: 900px) and (orientation: landscape) {
+  .welcome {
+    height: auto;
+    background: none !important;
+  }
+}
+
+/* Ensure all smaller devices use 'cover' to prevent black bars */
+@media (max-width: 900px) {
+  .welcome {
+    background-size: cover;
   }
 }
 
@@ -1352,5 +1367,34 @@ main {
   
   .item:hover .gallery-image {
     transform: none;
+  }
+}
+
+/* Fix for landscape view on mobile and tablets */
+@media (max-width: 900px) and (orientation: landscape) {
+  .welcome {
+    height: 54vh;
+    background-size: cover; /* Fill the screen to remove black bars */
+  }
+}
+
+@media (min-width: 901px) {
+  .welcome {
+    max-height: 60vh;
+    width: 100vw;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .welcome img {
+    max-height: 100%;
+    width: auto;
+    max-width: 100%;
+    display: block;
+    margin: 0 auto;
+    object-fit: contain;
   }
 }
