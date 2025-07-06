@@ -590,6 +590,18 @@ const portfolioItems = [
     label: 'Maternity Shoot 7',
     category: 'Maternity Shoot'
   },
+  {
+    thumbnail: 'image/Maternity Shoot/SAVE_20250625_122739_2_11zon.jpg',
+    image: 'image/Maternity Shoot/SAVE_20250625_122739_2_11zon.jpg',
+    label: 'Maternity Shoot 8',
+    category: 'Maternity Shoot'
+  },
+  {
+    thumbnail: 'image/Maternity Shoot/SAVE_20250625_190119_1_11zon.jpg',
+    image: 'image/Maternity Shoot/SAVE_20250625_190119_1_11zon.jpg',
+    label: 'Maternity Shoot 9',
+    category: 'Maternity Shoot'
+  },
   // New Born images
   {
     thumbnail: 'image/New Born/SAVE_20240911_203022_compressed_1_11zon_1_11zon.webp',
@@ -820,16 +832,23 @@ const portfolioItems = [
     label: 'Baby Shoot 19',
     category: 'Baby Shoots'
   },
-  {
-    thumbnail: 'image/Baby Shoots/DSC01611 copy_4_11zon.jpg',
-    image: 'image/Baby Shoots/DSC01611 copy_4_11zon.jpg',
-    label: 'Baby Shoot 20',
-    category: 'Baby Shoots'
-  },
+
   {
     thumbnail: 'image/Baby Shoots/DSC00022_11zon.webp',
     image: 'image/Baby Shoots/DSC00022_11zon.webp',
     label: 'Baby Shoot 21',
+    category: 'Baby Shoots'
+  },
+  {
+    thumbnail: 'image/Baby Shoots/DSC01611 copy_3_11zon.jpg',
+    image: 'image/Baby Shoots/DSC01611 copy_3_11zon.jpg',
+    label: 'Baby Shoot 22',
+    category: 'Baby Shoots'
+  },
+  {
+    thumbnail: 'image/Baby Shoots/SAVE_20250705_113046_4_11zon.jpg',
+    image: 'image/Baby Shoots/SAVE_20250705_113046_4_11zon.jpg',
+    label: 'Baby Shoot 23',
     category: 'Baby Shoots'
   },
   // Festival images
