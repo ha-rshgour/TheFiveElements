@@ -242,7 +242,7 @@ async function renderGallery(selectedCategory = 'All') {
     let itemsToShow;
     if (selectedCategory === 'All') {
       itemsToShow = portfolioItems.filter(item =>
-        ['Maternity Shoot', 'New Born', 'Baby Shoots'].includes(item.category)
+        ['Maternity Shoot', 'New Born', 'Baby Shoots', 'Festival', 'Special Shoot'].includes(item.category)
       );
     } else {
       itemsToShow = portfolioItems.filter(item => item.category === selectedCategory);
@@ -752,6 +752,12 @@ const portfolioItems = [
     label: 'Maternity Shoot 9',
     category: 'Maternity Shoot'
   },
+  {
+    thumbnail: 'image/Maternity Shoot/SAVE_20250808_143718_1_11zon.jpg',
+    image: 'image/Maternity Shoot/SAVE_20250808_143718_1_11zon.jpg',
+    label: 'Maternity Shoot 10',
+    category: 'Maternity Shoot'
+  },
   // New Born images
   {
     thumbnail: 'image/New Born/SAVE_20240911_203022_compressed_1_11zon_1_11zon.webp',
@@ -1001,6 +1007,24 @@ const portfolioItems = [
     label: 'Baby Shoot 23',
     category: 'Baby Shoots'
   },
+  {
+    thumbnail: 'image/Baby Shoots/17.8.2.jpg',
+    image: 'image/Baby Shoots/17.8.2.jpg',
+    label: 'Baby Shoot 24',
+    category: 'Baby Shoots'
+  },
+  {
+    thumbnail: 'image/Baby Shoots/17.8.3.jpg',
+    image: 'image/Baby Shoots/17.8.3.jpg',
+    label: 'Baby Shoot 25',
+    category: 'Baby Shoots'
+  },
+  {
+    thumbnail: 'image/Baby Shoots/17.8.jpg',
+    image: 'image/Baby Shoots/17.8.jpg',
+    label: 'Baby Shoot 26',
+    category: 'Baby Shoots'
+  },
   // Festival images
   {
     thumbnail: 'image/festival/DSC04248_compressed_1_11zon_1_11zon.webp',
@@ -1050,12 +1074,7 @@ const portfolioItems = [
     label: 'Festival 8',
     category: 'Festival'
   },
-  {
-    thumbnail: 'image/festival/P1139025_compressed_9_11zon_9_11zon.webp',
-    image: 'image/festival/P1139025_compressed_9_11zon_9_11zon.webp',
-    label: 'Festival 9',
-    category: 'Festival'
-  },
+
   {
     thumbnail: 'image/festival/P1139037_compressed_10_11zon_10_11zon.webp',
     image: 'image/festival/P1139037_compressed_10_11zon_10_11zon.webp',
@@ -1091,7 +1110,56 @@ const portfolioItems = [
     image: 'image/festival/SAVE_20250226_190800_compressed_15_11zon_15_11zon.webp',
     label: 'Festival 15',
     category: 'Festival'
+  },
+  {
+    thumbnail: 'image/festival/1.17.8.jpg',
+    image: 'image/festival/1.17.8.jpg',
+    label: 'Festival 16',
+    category: 'Festival'
+  },
+  {
+    thumbnail: 'image/festival/2.17.8.jpg',
+    image: 'image/festival/2.17.8.jpg',
+    label: 'Festival 17',
+    category: 'Festival'
+  },
+  {
+    thumbnail: 'image/festival/3.17.8.jpg',
+    image: 'image/festival/3.17.8.jpg',
+    label: 'Festival 18',
+    category: 'Festival'
+  },
+  {
+    thumbnail: 'image/festival/4.17.8.jpg',
+    image: 'image/festival/4.17.8.jpg',
+    label: 'Festival 19',
+    category: 'Festival'
+  },
+  // Special Shoot images
+  {
+    thumbnail: 'image/Special shoot/DSC02932_3_11zon.jpg',
+    image: 'image/Special shoot/DSC02932_3_11zon.jpg',
+    label: 'Special Shoot 1',
+    category: 'Special Shoot'
+  },
+  {
+    thumbnail: 'image/Special shoot/SAVE_20250711_212828_4_11zon.jpg',
+    image: 'image/Special shoot/SAVE_20250711_212828_4_11zon.jpg',
+    label: 'Special Shoot 2',
+    category: 'Special Shoot'
+  },
+  {
+    thumbnail: 'image/Special shoot/SAVE_20250711_212849_2_11zon.jpg',
+    image: 'image/Special shoot/SAVE_20250711_212849_2_11zon.jpg',
+    label: 'Special Shoot 3',
+    category: 'Special Shoot'
+  },
+  {
+    thumbnail: 'image/Special shoot/SAVE_20250711_212949_1_11zon.jpg',
+    image: 'image/Special shoot/SAVE_20250711_212949_1_11zon.jpg',
+    label: 'Special Shoot 4',
+    category: 'Special Shoot'
   }
 ];
 
-const categories = ['All', 'Maternity Shoot', 'New Born', 'Baby Shoots', 'Festival'];
+const categories = ['All', 'Maternity Shoot', 'New Born', 'Baby Shoots', 'Festival', 'Special Shoot'];
