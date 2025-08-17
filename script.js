@@ -1137,26 +1137,26 @@ const portfolioItems = [
   },
   // Special Shoot images
   {
-    thumbnail: 'image/Special shoot/DSC02932_3_11zon.jpg',
-    image: 'image/Special shoot/DSC02932_3_11zon.jpg',
+    thumbnail: 'image/Special%20shoot/DSC02932_3_11zon.jpg',
+    image: 'image/Special%20shoot/DSC02932_3_11zon.jpg',
     label: 'Special Shoot 1',
     category: 'Special Shoot'
   },
   {
-    thumbnail: 'image/Special shoot/SAVE_20250711_212828_4_11zon.jpg',
-    image: 'image/Special shoot/SAVE_20250711_212828_4_11zon.jpg',
+    thumbnail: 'image/Special%20shoot/SAVE_20250711_212828_4_11zon.jpg',
+    image: 'image/Special%20shoot/SAVE_20250711_212828_4_11zon.jpg',
     label: 'Special Shoot 2',
     category: 'Special Shoot'
   },
   {
-    thumbnail: 'image/Special shoot/SAVE_20250711_212849_2_11zon.jpg',
-    image: 'image/Special shoot/SAVE_20250711_212849_2_11zon.jpg',
+    thumbnail: 'image/Special%20shoot/SAVE_20250711_212849_2_11zon.jpg',
+    image: 'image/Special%20shoot/SAVE_20250711_212849_2_11zon.jpg',
     label: 'Special Shoot 3',
     category: 'Special Shoot'
   },
   {
-    thumbnail: 'image/Special shoot/SAVE_20250711_212949_1_11zon.jpg',
-    image: 'image/Special shoot/SAVE_20250711_212949_1_11zon.jpg',
+    thumbnail: 'image/Special%20shoot/SAVE_20250711_212949_1_11zon.jpg',
+    image: 'image/Special%20shoot/SAVE_20250711_212949_1_11zon.jpg',
     label: 'Special Shoot 4',
     category: 'Special Shoot'
   }
