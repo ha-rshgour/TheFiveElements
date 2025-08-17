@@ -292,7 +292,7 @@ async function renderGallery(selectedCategory = 'All') {
       div.addEventListener('click', function(e) {
         e.preventDefault();
         e.stopPropagation();
-        openLightbox(item.image);
+        openLightbox(item.image, item.category);
       });
       
       fragment.appendChild(div);
@@ -354,7 +354,7 @@ async function loadMoreImages() {
     div.addEventListener('click', function(e) {
       e.preventDefault();
       e.stopPropagation();
-      openLightbox(item.image);
+      openLightbox(item.image, item.category);
     });
     
     fragment.appendChild(div);
@@ -397,16 +397,48 @@ const lightbox = document.getElementById('lightbox');
 const lightboxImg = document.getElementById('lightbox-img');
 const lightboxCaption = document.getElementById('lightbox-caption');
 const closeBtn = document.querySelector('.close');
+const prevBtn = document.getElementById('prev-btn');
+const nextBtn = document.getElementById('next-btn');
+const lightboxCounter = document.getElementById('lightbox-counter');
 
-function openLightbox(imgSrc) {
+// Variables to track current image and available images
+let currentImageIndex = 0;
+let currentImages = [];
+
+function openLightbox(imgSrc, category = null) {
   // Add state to browser history
   history.pushState({ lightbox: true, image: imgSrc }, '');
   
+  // Set current images based on category or current gallery
+  if (category) {
+    currentImages = portfolioItems.filter(item => item.category === category);
+  } else {
+    // If no category specified, use current gallery items
+    const currentCategory = document.querySelector('.category-btn.active')?.dataset.category || 'All';
+    if (currentCategory === 'All') {
+      currentImages = portfolioItems.filter(item =>
+        ['Maternity Shoot', 'New Born', 'Baby Shoots'].includes(item.category)
+      );
+    } else {
+      currentImages = portfolioItems.filter(item => item.category === currentCategory);
+    }
+  }
+  
+  // Find current image index
+  currentImageIndex = currentImages.findIndex(item => item.image === imgSrc);
+  if (currentImageIndex === -1) currentImageIndex = 0;
+  
+  // Update navigation buttons state
+  updateNavigationButtons();
+  
   lightbox.style.display = 'block';
   lightboxImg.src = imgSrc;
-  lightboxCaption.textContent = '';
+  lightboxCaption.textContent = ''; // Remove image name/caption
   lightboxImg.classList.remove('zoomed');
   document.body.style.overflow = 'hidden'; // Prevent scrolling when lightbox is open
+  
+  // Update counter
+  updateLightboxCounter();
   
   // Add active class for animation
   setTimeout(() => {
@@ -421,6 +453,81 @@ function closeLightbox() {
     lightboxImg.classList.remove('zoomed');
     document.body.style.overflow = ''; // Restore scrolling
   }, 300); // Match the CSS transition duration
+}
+
+// Function to navigate to previous image
+function showPreviousImage() {
+  if (currentImages.length === 0) return;
+  
+  // Add transition effect
+  lightboxImg.classList.add('transitioning');
+  
+  setTimeout(() => {
+    currentImageIndex = (currentImageIndex - 1 + currentImages.length) % currentImages.length;
+    const newImage = currentImages[currentImageIndex];
+    
+    lightboxImg.src = newImage.image;
+    lightboxCaption.textContent = ''; // Remove image name/caption
+    lightboxImg.classList.remove('zoomed');
+    
+    // Remove transition effect
+    lightboxImg.classList.remove('transitioning');
+    
+    // Update history
+    history.pushState({ lightbox: true, image: newImage.image }, '');
+    
+    // Update navigation buttons state and counter
+    updateNavigationButtons();
+    updateLightboxCounter();
+  }, 200);
+}
+
+// Function to navigate to next image
+function showNextImage() {
+  if (currentImages.length === 0) return;
+  
+  // Add transition effect
+  lightboxImg.classList.add('transitioning');
+  
+  setTimeout(() => {
+    currentImageIndex = (currentImageIndex + 1) % currentImages.length;
+    const newImage = currentImages[currentImageIndex];
+    
+    lightboxImg.src = newImage.image;
+    lightboxCaption.textContent = ''; // Remove image name/caption
+    lightboxImg.classList.remove('zoomed');
+    
+    // Remove transition effect
+    lightboxImg.classList.remove('transitioning');
+    
+    // Update history
+    history.pushState({ lightbox: true, image: newImage.image }, '');
+    
+    // Update navigation buttons state and counter
+    updateNavigationButtons();
+    updateLightboxCounter();
+  }, 200);
+}
+
+// Function to update navigation buttons state
+function updateNavigationButtons() {
+  if (currentImages.length <= 1) {
+    prevBtn.disabled = true;
+    nextBtn.disabled = true;
+  } else {
+    prevBtn.disabled = false;
+    nextBtn.disabled = false;
+  }
+}
+
+// Function to update lightbox counter
+function updateLightboxCounter() {
+  if (currentImages.length <= 1) {
+    lightboxCounter.style.display = 'none';
+  } else {
+    lightboxCounter.style.display = 'block';
+    lightboxCounter.textContent = `${currentImageIndex + 1} / ${currentImages.length}`;
+  }
 }
 
 // Handle browser back button
@@ -447,11 +554,54 @@ window.onclick = function(event) {
   }
 }
 
-// Add keyboard support for closing lightbox
+// Add event listeners for navigation buttons
+prevBtn.addEventListener('click', function(e) {
+  e.stopPropagation();
+  showPreviousImage();
+});
+
+nextBtn.addEventListener('click', function(e) {
+  e.stopPropagation();
+  showNextImage();
+});
+
+// Add touch/swipe support for mobile devices
+let touchStartX = 0;
+let touchEndX = 0;
+
+lightbox.addEventListener('touchstart', function(e) {
+  touchStartX = e.changedTouches[0].screenX;
+});
+
+lightbox.addEventListener('touchend', function(e) {
+  touchEndX = e.changedTouches[0].screenX;
+  handleSwipe();
+});
+
+function handleSwipe() {
+  const swipeThreshold = 50;
+  const diff = touchStartX - touchEndX;
+  
+  if (Math.abs(diff) > swipeThreshold) {
+    if (diff > 0) {
+      // Swipe left - next image
+      showNextImage();
+    } else {
+      // Swipe right - previous image
+      showPreviousImage();
+    }
+  }
+}
+
+// Add keyboard support for lightbox navigation
 document.addEventListener('keydown', function(event) {
   if (lightbox.style.display === 'block') {
     if (event.key === 'Escape') {
       history.back(); // Go back in history instead of just closing
+    } else if (event.key === 'ArrowLeft') {
+      showPreviousImage();
+    } else if (event.key === 'ArrowRight') {
+      showNextImage();
     }
   }
 });

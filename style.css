@@ -505,6 +505,13 @@ footer {
   transition: opacity var(--animation-duration) ease-out, transform var(--animation-duration) ease-out;
 }
 
+/* Smooth transition for image changes */
+.lightbox-content.transitioning {
+  opacity: 0.7;
+  transform: translate(-50%, -50%) scale(0.98);
+  transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+}
+
 .lightbox.active .lightbox-content {
   opacity: 1;
 }
@@ -560,6 +567,87 @@ footer {
 }
 
 .lightbox.active #lightbox-caption {
+  opacity: 1;
+}
+
+/* Navigation buttons for lightbox */
+.nav-btn {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0, 0, 0, 0.5);
+  color: #f1f1f1;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 15px 12px;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.3s ease, opacity 0.3s ease;
+  opacity: 0;
+  z-index: 1001;
+}
+
+.lightbox.active .nav-btn {
+  opacity: 1;
+}
+
+.nav-btn:hover {
+  background: rgba(0, 0, 0, 0.8);
+}
+
+.nav-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.prev-btn {
+  left: 20px;
+}
+
+.next-btn {
+  right: 20px;
+}
+
+/* Responsive navigation buttons */
+@media (max-width: 768px) {
+  .nav-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+    padding: 10px 8px;
+  }
+  
+  .prev-btn {
+    left: 10px;
+  }
+  
+  .next-btn {
+    right: 10px;
+  }
+}
+
+/* Lightbox counter */
+.lightbox-counter {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  color: #f1f1f1;
+  font-size: 16px;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 8px 12px;
+  border-radius: 20px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 1001;
+}
+
+.lightbox.active .lightbox-counter {
   opacity: 1;
 }
 
