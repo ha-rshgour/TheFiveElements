@@ -292,7 +292,11 @@ async function renderGallery(selectedCategory = 'All') {
       div.addEventListener('click', function(e) {
         e.preventDefault();
         e.stopPropagation();
-        openLightbox(item.image, item.category);
+        if (item.externalLink) {
+          window.open(item.externalLink, '_blank', 'noopener');
+        } else {
+          openLightbox(item.image, item.category);
+        }
       });
       
       fragment.appendChild(div);
@@ -354,7 +358,11 @@ async function loadMoreImages() {
     div.addEventListener('click', function(e) {
       e.preventDefault();
       e.stopPropagation();
-      openLightbox(item.image, item.category);
+      if (item.externalLink) {
+        window.open(item.externalLink, '_blank', 'noopener');
+      } else {
+        openLightbox(item.image, item.category);
+      }
     });
     
     fragment.appendChild(div);
@@ -1163,3 +1171,142 @@ const portfolioItems = [
 ];
 
 const categories = ['All', 'Maternity Shoot', 'New Born', 'Baby Shoots', 'Festival', 'Special Shoot'];
+
+// --- Flickr integration (public feed via JSONP, no API key required) ---
+// Adds N images from a Flickr user to a given gallery category
+function loadFlickrImages(userId, count, category) {
+  if (!userId || !count || !category) return;
+
+  // Guard to avoid multiple insertions
+  if (window.__flickrLoaded) return;
+  window.__flickrLoaded = true;
+
+  // Define the JSONP callback expected by Flickr public feed
+  window.jsonFlickrFeed = function(data) {
+    try {
+      if (!data || !Array.isArray(data.items)) return;
+      const items = data.items.slice(0, count);
+
+      items.forEach((it, idx) => {
+        // media.m looks like ..._m.jpg; build a larger version by replacing _m with _b for lightbox
+        const mediaM = it.media && it.media.m ? it.media.m : null;
+        if (!mediaM) return;
+        const large = mediaM.replace('_m.', '_b.');
+
+        portfolioItems.push({
+          thumbnail: mediaM,
+          image: large,
+          label: (it.title || 'Flickr Photo') + ` #${idx + 1}`,
+          category: category
+        });
+      });
+
+      // Re-render if the user is viewing this category; otherwise keep current selection
+      const activeCategoryBtn = document.querySelector('.gallery-filter button.active');
+      const activeCategory = activeCategoryBtn ? activeCategoryBtn.dataset.category : 'All';
+      if (activeCategory === 'All' || activeCategory === category) {
+        renderGallery(activeCategory);
+      }
+    } catch (e) {
+      console.error('Failed to process Flickr feed:', e);
+    }
+  };
+
+  const script = document.createElement('script');
+  script.src = `https://www.flickr.com/services/feeds/photos_public.gne?id=${encodeURIComponent(userId)}&format=json`;
+  script.async = true;
+  script.onerror = () => {
+    console.error('Failed to load Flickr feed');
+  };
+  document.body.appendChild(script);
+}
+
+// Add a single Flickr shared image into a category using oEmbed (JSONP)
+function loadFlickrShare(shareUrl, category) {
+  if (!shareUrl || !category) return;
+
+  if (window.__flickrShareLoaded) return;
+  window.__flickrShareLoaded = true;
+
+  let completed = false;
+
+  window.flickrOembedCallback = function(data) {
+    try {
+      if (!data) return;
+      completed = true;
+      const rawThumb = data.thumbnail_url || data.url || '';
+      if (!rawThumb) return;
+
+      // Normalize to https and strip query params
+      const thumbUrl = rawThumb.split('?')[0].replace(/^http:\/\//, 'https://');
+
+      // Promote size: replace _q, _s, _t, _m, _n, _z, _c with _b (best effort)
+      const fullUrl = thumbUrl.replace(/_q\.|_s\.|_t\.|_m\.|_n\.|_z\.|_c\.|_h\.|_k\./, '_b.');
+
+      // Insert at the beginning so it appears early
+      portfolioItems.unshift({
+        thumbnail: thumbUrl,
+        image: fullUrl,
+        label: data.title || 'Flickr Photo',
+        category: category
+      });
+
+      const activeCategoryBtn = document.querySelector('.gallery-filter button.active');
+      const activeCategory = activeCategoryBtn ? activeCategoryBtn.dataset.category : 'All';
+      if (activeCategory === 'All' || activeCategory === category) {
+        renderGallery(activeCategory);
+      }
+    } catch (e) {
+      console.error('Failed to process Flickr oEmbed:', e);
+    }
+  };
+
+  const script = document.createElement('script');
+  script.src = `https://www.flickr.com/services/oembed/?format=json&url=${encodeURIComponent(shareUrl)}&jsoncallback=flickrOembedCallback`;
+  script.async = true;
+  script.onerror = () => {
+    console.error('Failed to load Flickr oEmbed');
+    // Fallback to public feed (1 image)
+    loadFlickrImages('203686649@N08', 1, category);
+  };
+  document.body.appendChild(script);
+
+  // Fallback if oEmbed doesn’t fire (unsupported share URL)
+  setTimeout(() => {
+    if (!completed) {
+      loadFlickrImages('203686649@N08', 1, category);
+    }
+  }, 4000);
+}
+
+// Load exactly one Flickr share into Maternity section
+document.addEventListener('DOMContentLoaded', () => {
+  // Add third Flickr image
+  portfolioItems.unshift({
+    thumbnail: 'https://live.staticflickr.com/65535/54829363198_864078383a_b.jpg',
+    image: 'https://live.staticflickr.com/65535/54829363198_864078383a_b.jpg',
+    label: 'DSC06494',
+    category: 'Maternity Shoot'
+  });
+  // Add second Flickr image
+  portfolioItems.unshift({
+    thumbnail: 'https://live.staticflickr.com/65535/54829347174_18d7de98b0_b.jpg',
+    image: 'https://live.staticflickr.com/65535/54829347174_18d7de98b0_b.jpg',
+    label: 'DSC06469',
+    category: 'Maternity Shoot'
+  });
+  // Insert the direct Flickr image as a normal gallery item (works with lightbox)
+  portfolioItems.unshift({
+    // Using provided direct URL; for a smaller thumb you can swap _b to _z
+    thumbnail: 'https://live.staticflickr.com/65535/54829362774_b60d07ecbf_b.jpg',
+    image: 'https://live.staticflickr.com/65535/54829362774_b60d07ecbf_b.jpg',
+    label: 'DSC06482',
+    category: 'Maternity Shoot'
+  });
+  // Re-render if needed
+  const activeCategoryBtn = document.querySelector('.gallery-filter button.active');
+  const activeCategory = activeCategoryBtn ? activeCategoryBtn.dataset.category : 'All';
+  if (activeCategory === 'All' || activeCategory === 'Maternity Shoot') {
+    renderGallery(activeCategory);
+  }
+});
