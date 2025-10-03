@@ -415,6 +415,7 @@ const lightboxCounter = document.getElementById('lightbox-counter');
 let currentImageIndex = 0;
 let currentImages = [];
 
+
 function openLightbox(imgSrc, category = null) {
   // Add state to browser history
   history.pushState({ lightbox: true, image: imgSrc }, '');
@@ -548,7 +549,7 @@ window.addEventListener('popstate', (event) => {
 });
 
 // Add click event for zooming
-// Enable zoom-on-click in lightbox
+// Restore previous simple zoom toggle behavior
 lightboxImg.addEventListener('click', function(e) {
   e.stopPropagation();
   this.classList.toggle('zoomed');
@@ -726,7 +727,19 @@ if (showMoreBtn) {
 
 // Initialize gallery on page load
 document.addEventListener('DOMContentLoaded', () => {
-  renderGallery();
+  // Always start at top and default to All filter
+  if (location.hash) {
+    history.replaceState(null, '', location.pathname + location.search);
+  }
+  window.scrollTo({ top: 0, left: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
+  // Set All as active in filter bar if present
+  const filterBarEl = document.getElementById('gallery-filter');
+  if (filterBarEl) {
+    filterBarEl.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+    const allBtn = Array.from(filterBarEl.querySelectorAll('button')).find(b => b.dataset.category === 'All');
+    if (allBtn) allBtn.classList.add('active');
+  }
+  renderGallery('All');
 });
 
 // Portfolio items data
