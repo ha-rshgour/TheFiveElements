@@ -283,6 +283,7 @@ async function renderGallery(selectedCategory = 'All') {
       img.className = 'gallery-image';
       img.alt = item.label || '';
       img.loading = 'lazy';
+      img.draggable = false;
       
       // Use data-src for lazy loading
       const imagePath = item.thumbnail || item.image;
@@ -352,6 +353,7 @@ async function loadMoreImages() {
     img.className = 'gallery-image';
     img.alt = item.label || '';
     img.loading = 'lazy';
+    img.draggable = false;
     img.dataset.src = item.thumbnail || item.image;
     
     div.appendChild(img);
@@ -546,8 +548,9 @@ window.addEventListener('popstate', (event) => {
 });
 
 // Add click event for zooming
+// Enable zoom-on-click in lightbox
 lightboxImg.addEventListener('click', function(e) {
-  e.stopPropagation(); // Prevent event from bubbling up
+  e.stopPropagation();
   this.classList.toggle('zoomed');
 });
 
@@ -603,6 +606,20 @@ function handleSwipe() {
 
 // Add keyboard support for lightbox navigation
 document.addEventListener('keydown', function(event) {
+  // Block common save/print/inspect combos
+  if (event.ctrlKey || event.metaKey) {
+    const k = event.key.toLowerCase();
+    if (k === 's' || k === 'p' || k === 'u') {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+  }
+  if (event.key === 'F12') {
+    event.preventDefault();
+    event.stopPropagation();
+    return;
+  }
   if (lightbox.style.display === 'block') {
     if (event.key === 'Escape') {
       history.back(); // Go back in history instead of just closing
@@ -611,6 +628,14 @@ document.addEventListener('keydown', function(event) {
     } else if (event.key === 'ArrowRight') {
       showNextImage();
     }
+  }
+});
+
+// Disable context menu on images and lightbox
+document.addEventListener('contextmenu', function(e) {
+  const target = e.target;
+  if (target && (target.classList && (target.classList.contains('gallery-image') || target.id === 'lightbox-img'))) {
+    e.preventDefault();
   }
 });
 

@@ -313,6 +313,12 @@ header h1 {
   image-rendering: -webkit-optimize-contrast;
   image-rendering: crisp-edges;
   isolation: isolate;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
 }
 
 .gallery-image.loaded {
@@ -518,7 +524,7 @@ footer {
 
 .lightbox-content.zoomed {
   cursor: zoom-out;
-  transform: translate(-50%, -50%) scale(1.5);
+  transform: translate(-50%, -50%) scale(2.5);
 }
 
 .close {
