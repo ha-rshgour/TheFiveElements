@@ -798,12 +798,6 @@ const portfolioItems = [
     label: 'Maternity Shoot 9',
     category: 'Maternity Shoot'
   },
-  {
-    thumbnail: 'image/Maternity Shoot/SAVE_20250808_143718_1_11zon.jpg',
-    image: 'image/Maternity Shoot/SAVE_20250808_143718_1_11zon.jpg',
-    label: 'Maternity Shoot 10',
-    category: 'Maternity Shoot'
-  },
   // New Born images
   {
     thumbnail: 'image/New Born/SAVE_20240911_203022_compressed_1_11zon_1_11zon.webp',
@@ -1321,14 +1315,14 @@ function loadFlickrShare(shareUrl, category) {
 document.addEventListener('DOMContentLoaded', () => {
   // Add third Flickr image
   portfolioItems.unshift({
-    thumbnail: 'https://live.staticflickr.com/65535/54829363198_864078383a_b.jpg',
+    thumbnail: 'https://live.staticflickr.com/65535/54829363198_864078383a_z.jpg',
     image: 'https://live.staticflickr.com/65535/54829363198_864078383a_b.jpg',
     label: 'DSC06494',
     category: 'Maternity Shoot'
   });
   // Add second Flickr image
   portfolioItems.unshift({
-    thumbnail: 'https://live.staticflickr.com/65535/54829347174_18d7de98b0_b.jpg',
+    thumbnail: 'https://live.staticflickr.com/65535/54829347174_18d7de98b0_z.jpg',
     image: 'https://live.staticflickr.com/65535/54829347174_18d7de98b0_b.jpg',
     label: 'DSC06469',
     category: 'Maternity Shoot'
@@ -1336,15 +1330,51 @@ document.addEventListener('DOMContentLoaded', () => {
   // Insert the direct Flickr image as a normal gallery item (works with lightbox)
   portfolioItems.unshift({
     // Using provided direct URL; for a smaller thumb you can swap _b to _z
-    thumbnail: 'https://live.staticflickr.com/65535/54829362774_b60d07ecbf_b.jpg',
+    thumbnail: 'https://live.staticflickr.com/65535/54829362774_b60d07ecbf_z.jpg',
     image: 'https://live.staticflickr.com/65535/54829362774_b60d07ecbf_b.jpg',
     label: 'DSC06482',
     category: 'Maternity Shoot'
   });
+  // Add Flickr image to New Born gallery
+  portfolioItems.unshift({
+    thumbnail: 'https://live.staticflickr.com/65535/54846958844_aea3daf21a_z.jpg',
+    image: 'https://live.staticflickr.com/65535/54846958844_aea3daf21a_b.jpg',
+    label: 'SAVE_20251005_095058',
+    category: 'New Born'
+  });
+  // Add second Flickr image to New Born gallery
+  portfolioItems.unshift({
+    thumbnail: 'https://live.staticflickr.com/65535/54847029760_746dcd3097_z.jpg',
+    image: 'https://live.staticflickr.com/65535/54847029760_746dcd3097_b.jpg',
+    label: 'SAVE_20251005_095110',
+    category: 'New Born'
+  });
+  // Add third Flickr image to New Born gallery
+  portfolioItems.unshift({
+    thumbnail: 'https://live.staticflickr.com/65535/54847029735_d2b64246c2_z.jpg',
+    image: 'https://live.staticflickr.com/65535/54847029735_d2b64246c2_b.jpg',
+    label: 'SAVE_20251005_095117',
+    category: 'New Born'
+  });
+  // Add fourth Flickr image to New Born gallery
+  portfolioItems.unshift({
+    thumbnail: 'https://live.staticflickr.com/65535/54845853452_ff2f9fed85_z.jpg',
+    image: 'https://live.staticflickr.com/65535/54845853452_ff2f9fed85_b.jpg',
+    label: 'SAVE_20251011_243113',
+    category: 'New Born'
+  });
+  // Add Flickr image to Baby Shoots gallery
+  portfolioItems.unshift({
+    thumbnail: 'https://live.staticflickr.com/65535/54847029775_6d88424bf0_z.jpg',
+    image: 'https://live.staticflickr.com/65535/54847029775_6d88424bf0_b.jpg',
+    label: 'SAVE_20251006_153134',
+    category: 'Baby Shoots'
+  });
+  
   // Re-render if needed
   const activeCategoryBtn = document.querySelector('.gallery-filter button.active');
   const activeCategory = activeCategoryBtn ? activeCategoryBtn.dataset.category : 'All';
-  if (activeCategory === 'All' || activeCategory === 'Maternity Shoot') {
+  if (activeCategory === 'All' || activeCategory === 'Maternity Shoot' || activeCategory === 'New Born' || activeCategory === 'Baby Shoots') {
     renderGallery(activeCategory);
   }
 });

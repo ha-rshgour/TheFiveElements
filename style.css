@@ -872,6 +872,35 @@ footer {
   line-height: 1.6;
 }
 
+.flickr-embed {
+  padding: 0 1.5rem 1.5rem;
+  text-align: center;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.flickr-embed img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px var(--shadow-color);
+  transition: transform 0.3s ease;
+  display: block;
+  margin: 0 auto;
+}
+
+.flickr-embed img:hover {
+  transform: scale(1.02);
+}
+
+.flickr-embed a {
+  display: block;
+  width: 100%;
+}
+
 /* About Section */
 .about {
   padding: 4rem 2rem;
