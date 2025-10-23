@@ -1370,6 +1370,55 @@ document.addEventListener('DOMContentLoaded', () => {
     label: 'SAVE_20251006_153134',
     category: 'Baby Shoots'
   });
+  // Add fourth Flickr image to Maternity Shoot gallery
+  portfolioItems.unshift({
+    thumbnail: 'https://live.staticflickr.com/65535/54874369913_f25085825a_z.jpg',
+    image: 'https://live.staticflickr.com/65535/54874369913_f25085825a_b.jpg',
+    label: 'DSC09757 (1)',
+    category: 'Maternity Shoot'
+  });
+  // Add fifth Flickr image to Maternity Shoot gallery
+  portfolioItems.unshift({
+    thumbnail: 'https://live.staticflickr.com/65535/54874436870_15c15c1a6b_z.jpg',
+    image: 'https://live.staticflickr.com/65535/54874436870_15c15c1a6b_b.jpg',
+    label: 'DSC09796',
+    category: 'Maternity Shoot'
+  });
+  // Add sixth Flickr image to Maternity Shoot gallery
+  portfolioItems.unshift({
+    thumbnail: 'https://live.staticflickr.com/65535/54874369398_eb7c5e720d_z.jpg',
+    image: 'https://live.staticflickr.com/65535/54874369398_eb7c5e720d_b.jpg',
+    label: 'DSC09786-2',
+    category: 'Maternity Shoot'
+  });
+  // Add seventh Flickr image to Maternity Shoot gallery
+  portfolioItems.unshift({
+    thumbnail: 'https://live.staticflickr.com/65535/54874383189_cbfca88b26_z.jpg',
+    image: 'https://live.staticflickr.com/65535/54874383189_cbfca88b26_b.jpg',
+    label: 'DSC00438',
+    category: 'Maternity Shoot'
+  });
+  // Add eighth Flickr image to Maternity Shoot gallery
+  portfolioItems.unshift({
+    thumbnail: 'https://live.staticflickr.com/65535/54874382934_b15bbe7e5f_z.jpg',
+    image: 'https://live.staticflickr.com/65535/54874382934_b15bbe7e5f_b.jpg',
+    label: 'DSC00451',
+    category: 'Maternity Shoot'
+  });
+  // Add ninth Flickr image to Maternity Shoot gallery
+  portfolioItems.unshift({
+    thumbnail: 'https://live.staticflickr.com/65535/54874382889_4caff1e323_z.jpg',
+    image: 'https://live.staticflickr.com/65535/54874382889_4caff1e323_b.jpg',
+    label: 'DSC00472',
+    category: 'Maternity Shoot'
+  });
+  // Add tenth Flickr image to Maternity Shoot gallery
+  portfolioItems.unshift({
+    thumbnail: 'https://live.staticflickr.com/65535/54874382869_304f44731e_z.jpg',
+    image: 'https://live.staticflickr.com/65535/54874382869_304f44731e_b.jpg',
+    label: '2',
+    category: 'Maternity Shoot'
+  });
   
   // Re-render if needed
   const activeCategoryBtn = document.querySelector('.gallery-filter button.active');
