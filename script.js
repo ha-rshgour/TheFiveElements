@@ -9,8 +9,8 @@ const MAX_CACHE_SIZE = 50; // Maximum number of images to keep in cache
 const SCROLL_THROTTLE = 8; // ~120fps for high refresh rate screens
 let lastScrollTime = 0;
 let scrollTimeout = null;
-let isHighRefreshRate = window.matchMedia('(min-resolution: 120dpi)').matches || 
-                       window.matchMedia('(min-resolution: 2dppx)').matches;
+let isHighRefreshRate = window.matchMedia('(min-resolution: 120dpi)').matches ||
+  window.matchMedia('(min-resolution: 2dppx)').matches;
 
 // Adjust throttle based on screen refresh rate
 const getScrollThrottle = () => {
@@ -38,7 +38,7 @@ function manageCacheSize() {
 // Function to handle initial page load
 function handleInitialLoad() {
   if (pageLoaded) return; // Prevent multiple executions
-  
+
   pageLoaded = true;
   const currentTime = Date.now();
   const elapsedTime = currentTime - startTime;
@@ -65,16 +65,16 @@ window.addEventListener('load', handleInitialLoad, { once: true });
 function createLoadingAnimation(container) {
   const loadingDiv = document.createElement('div');
   loadingDiv.className = 'image-loading-animation';
-  
+
   const loaderImg = document.createElement('img');
   loaderImg.src = 'image/Image loader.gif';
   loaderImg.alt = 'Loading...';
   loaderImg.className = 'loader-gif';
   loaderImg.style.display = 'block';
-  
+
   loadingDiv.appendChild(loaderImg);
   container.appendChild(loadingDiv);
-  
+
   return loadingDiv;
 }
 
@@ -82,7 +82,7 @@ function createLoadingAnimation(container) {
 function handleScroll() {
   const now = Date.now();
   const throttle = getScrollThrottle();
-  
+
   if (now - lastScrollTime >= throttle) {
     lastScrollTime = now;
     requestAnimationFrame(() => {
@@ -108,19 +108,19 @@ function preloadAndCacheImage(src, retries = 3) {
 
   return new Promise((resolve, reject) => {
     const img = new Image();
-    
+
     // Set crossOrigin if needed
     if (src.startsWith('http')) {
       img.crossOrigin = 'anonymous';
     }
-    
+
     img.onload = () => {
       // Store the optimized image
       imageCache.set(src, img);
       manageCacheSize();
       resolve(img);
     };
-    
+
     img.onerror = () => {
       console.error(`Failed to load image: ${src}`);
       if (retries > 0) {
@@ -131,7 +131,7 @@ function preloadAndCacheImage(src, retries = 3) {
         reject(new Error(`Failed to load image after multiple retries: ${src}`));
       }
     };
-    
+
     img.src = src;
   });
 }
@@ -154,7 +154,7 @@ function handleLazyLoad() {
             img.src = cachedImg.src;
             img.classList.add('loaded');
             img.classList.remove('loading');
-            
+
             if (loadingAnimation) {
               loadingAnimation.style.opacity = '0';
               setTimeout(() => loadingAnimation.remove(), isHighRefreshRate ? 150 : 300);
@@ -166,7 +166,7 @@ function handleLazyLoad() {
                 img.src = cachedImg.src;
                 img.classList.add('loaded');
                 img.classList.remove('loading');
-                
+
                 if (loadingAnimation) {
                   loadingAnimation.style.opacity = '0';
                   setTimeout(() => loadingAnimation.remove(), isHighRefreshRate ? 150 : 300);
@@ -176,7 +176,7 @@ function handleLazyLoad() {
                 img.src = 'image/placeholder.jpg';
                 img.alt = 'Image not available';
                 img.classList.remove('loading');
-                
+
                 if (loadingAnimation) {
                   loadingAnimation.remove();
                 }
@@ -237,7 +237,7 @@ async function renderGallery(selectedCategory = 'All') {
 
   // Show loading state
   gallery.innerHTML = '<div class="gallery-loading">Loading...</div>';
-  
+
   try {
     let itemsToShow;
     if (selectedCategory === 'All') {
@@ -264,33 +264,33 @@ async function renderGallery(selectedCategory = 'All') {
 
     // Create initial gallery items with performance optimization
     const fragment = document.createDocumentFragment();
-    
+
     // Preload first batch of images
-    const preloadPromises = initialItems.map(item => 
+    const preloadPromises = initialItems.map(item =>
       preloadAndCacheImage(item.thumbnail || item.image)
     );
 
     // Wait for initial batch to preload
     await Promise.allSettled(preloadPromises);
-    
+
     initialItems.forEach(item => {
       const div = document.createElement('div');
       div.className = 'item';
-      
+
       const loadingAnimation = createLoadingAnimation(div);
-      
+
       const img = document.createElement('img');
       img.className = 'gallery-image';
       img.alt = item.label || '';
       img.loading = 'lazy';
       img.draggable = false;
-      
+
       // Use data-src for lazy loading
       const imagePath = item.thumbnail || item.image;
       img.dataset.src = imagePath;
-      
+
       div.appendChild(img);
-      div.addEventListener('click', function(e) {
+      div.addEventListener('click', function (e) {
         e.preventDefault();
         e.stopPropagation();
         if (item.externalLink) {
@@ -299,7 +299,7 @@ async function renderGallery(selectedCategory = 'All') {
           openLightbox(item.image, item.category);
         }
       });
-      
+
       fragment.appendChild(div);
     });
 
@@ -340,24 +340,24 @@ async function loadMoreImages() {
 
   // Load next batch of 12 images
   const nextBatch = window.remainingItems.splice(0, 12);
-  
+
   const fragment = document.createDocumentFragment();
-  
+
   nextBatch.forEach(item => {
     const div = document.createElement('div');
     div.className = 'item';
-    
+
     const loadingAnimation = createLoadingAnimation(div);
-    
+
     const img = document.createElement('img');
     img.className = 'gallery-image';
     img.alt = item.label || '';
     img.loading = 'lazy';
     img.draggable = false;
     img.dataset.src = item.thumbnail || item.image;
-    
+
     div.appendChild(img);
-    div.addEventListener('click', function(e) {
+    div.addEventListener('click', function (e) {
       e.preventDefault();
       e.stopPropagation();
       if (item.externalLink) {
@@ -366,12 +366,12 @@ async function loadMoreImages() {
         openLightbox(item.image, item.category);
       }
     });
-    
+
     fragment.appendChild(div);
   });
 
   gallery.appendChild(fragment);
-  
+
   // Initialize lazy loading for new images
   handleLazyLoad();
 
@@ -419,7 +419,7 @@ let currentImages = [];
 function openLightbox(imgSrc, category = null) {
   // Add state to browser history
   history.pushState({ lightbox: true, image: imgSrc }, '');
-  
+
   // Set current images based on category or current gallery
   if (category) {
     currentImages = portfolioItems.filter(item => item.category === category);
@@ -434,23 +434,23 @@ function openLightbox(imgSrc, category = null) {
       currentImages = portfolioItems.filter(item => item.category === currentCategory);
     }
   }
-  
+
   // Find current image index
   currentImageIndex = currentImages.findIndex(item => item.image === imgSrc);
   if (currentImageIndex === -1) currentImageIndex = 0;
-  
+
   // Update navigation buttons state
   updateNavigationButtons();
-  
+
   lightbox.style.display = 'block';
   lightboxImg.src = imgSrc;
   lightboxCaption.textContent = ''; // Remove image name/caption
   lightboxImg.classList.remove('zoomed');
   document.body.style.overflow = 'hidden'; // Prevent scrolling when lightbox is open
-  
+
   // Update counter
   updateLightboxCounter();
-  
+
   // Add active class for animation
   setTimeout(() => {
     lightbox.classList.add('active');
@@ -469,24 +469,24 @@ function closeLightbox() {
 // Function to navigate to previous image
 function showPreviousImage() {
   if (currentImages.length === 0) return;
-  
+
   // Add transition effect
   lightboxImg.classList.add('transitioning');
-  
+
   setTimeout(() => {
     currentImageIndex = (currentImageIndex - 1 + currentImages.length) % currentImages.length;
     const newImage = currentImages[currentImageIndex];
-    
+
     lightboxImg.src = newImage.image;
     lightboxCaption.textContent = ''; // Remove image name/caption
     lightboxImg.classList.remove('zoomed');
-    
+
     // Remove transition effect
     lightboxImg.classList.remove('transitioning');
-    
+
     // Update history
     history.pushState({ lightbox: true, image: newImage.image }, '');
-    
+
     // Update navigation buttons state and counter
     updateNavigationButtons();
     updateLightboxCounter();
@@ -496,24 +496,24 @@ function showPreviousImage() {
 // Function to navigate to next image
 function showNextImage() {
   if (currentImages.length === 0) return;
-  
+
   // Add transition effect
   lightboxImg.classList.add('transitioning');
-  
+
   setTimeout(() => {
     currentImageIndex = (currentImageIndex + 1) % currentImages.length;
     const newImage = currentImages[currentImageIndex];
-    
+
     lightboxImg.src = newImage.image;
     lightboxCaption.textContent = ''; // Remove image name/caption
     lightboxImg.classList.remove('zoomed');
-    
+
     // Remove transition effect
     lightboxImg.classList.remove('transitioning');
-    
+
     // Update history
     history.pushState({ lightbox: true, image: newImage.image }, '');
-    
+
     // Update navigation buttons state and counter
     updateNavigationButtons();
     updateLightboxCounter();
@@ -550,29 +550,29 @@ window.addEventListener('popstate', (event) => {
 
 // Add click event for zooming
 // Restore previous simple zoom toggle behavior
-lightboxImg.addEventListener('click', function(e) {
+lightboxImg.addEventListener('click', function (e) {
   e.stopPropagation();
   this.classList.toggle('zoomed');
 });
 
-closeBtn.onclick = function(e) {
+closeBtn.onclick = function (e) {
   e.stopPropagation(); // Prevent event from bubbling up
   history.back(); // Go back in history instead of just closing
 }
 
-window.onclick = function(event) {
+window.onclick = function (event) {
   if (event.target == lightbox) {
     history.back(); // Go back in history instead of just closing
   }
 }
 
 // Add event listeners for navigation buttons
-prevBtn.addEventListener('click', function(e) {
+prevBtn.addEventListener('click', function (e) {
   e.stopPropagation();
   showPreviousImage();
 });
 
-nextBtn.addEventListener('click', function(e) {
+nextBtn.addEventListener('click', function (e) {
   e.stopPropagation();
   showNextImage();
 });
@@ -581,11 +581,11 @@ nextBtn.addEventListener('click', function(e) {
 let touchStartX = 0;
 let touchEndX = 0;
 
-lightbox.addEventListener('touchstart', function(e) {
+lightbox.addEventListener('touchstart', function (e) {
   touchStartX = e.changedTouches[0].screenX;
 });
 
-lightbox.addEventListener('touchend', function(e) {
+lightbox.addEventListener('touchend', function (e) {
   touchEndX = e.changedTouches[0].screenX;
   handleSwipe();
 });
@@ -593,7 +593,7 @@ lightbox.addEventListener('touchend', function(e) {
 function handleSwipe() {
   const swipeThreshold = 50;
   const diff = touchStartX - touchEndX;
-  
+
   if (Math.abs(diff) > swipeThreshold) {
     if (diff > 0) {
       // Swipe left - next image
@@ -606,7 +606,7 @@ function handleSwipe() {
 }
 
 // Add keyboard support for lightbox navigation
-document.addEventListener('keydown', function(event) {
+document.addEventListener('keydown', function (event) {
   // Block common save/print/inspect combos
   if (event.ctrlKey || event.metaKey) {
     const k = event.key.toLowerCase();
@@ -633,7 +633,7 @@ document.addEventListener('keydown', function(event) {
 });
 
 // Disable context menu on images and lightbox
-document.addEventListener('contextmenu', function(e) {
+document.addEventListener('contextmenu', function (e) {
   const target = e.target;
   if (target && (target.classList && (target.classList.contains('gallery-image') || target.id === 'lightbox-img'))) {
     e.preventDefault();
@@ -646,7 +646,7 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     e.preventDefault();
     const targetId = this.getAttribute('href');
     if (targetId === '#') return;
-    
+
     const targetElement = document.querySelector(targetId);
     if (targetElement) {
       const headerOffset = 80;
@@ -681,7 +681,7 @@ let isExpanded = false;
 function updateGalleryDisplay() {
   const items = document.querySelectorAll('.item');
   const selectedCategory = document.querySelector('.gallery-filter button.active').dataset.category;
-  
+
   if (selectedCategory === 'All') {
     items.forEach((item, index) => {
       if (isExpanded || index < 30) {
@@ -1214,7 +1214,7 @@ function loadFlickrImages(userId, count, category) {
   window.__flickrLoaded = true;
 
   // Define the JSONP callback expected by Flickr public feed
-  window.jsonFlickrFeed = function(data) {
+  window.jsonFlickrFeed = function (data) {
     try {
       if (!data || !Array.isArray(data.items)) return;
       const items = data.items.slice(0, count);
@@ -1262,7 +1262,7 @@ function loadFlickrShare(shareUrl, category) {
 
   let completed = false;
 
-  window.flickrOembedCallback = function(data) {
+  window.flickrOembedCallback = function (data) {
     try {
       if (!data) return;
       completed = true;
@@ -1419,7 +1419,24 @@ document.addEventListener('DOMContentLoaded', () => {
     label: '2',
     category: 'Maternity Shoot'
   });
-  
+
+  // Add Flickr image to Baby Shoots section (DSC05308)
+  portfolioItems.unshift({
+    thumbnail: 'https://live.staticflickr.com/65535/55103156792_27b6eaf9f3_z.jpg',
+    image: 'https://live.staticflickr.com/65535/55103156792_27b6eaf9f3_b.jpg',
+    label: 'DSC05308',
+    category: 'Baby Shoots'
+  });
+
+  // Add another Flickr image to Baby Shoots section (DSC05285)
+  portfolioItems.unshift({
+    thumbnail: 'https://live.staticflickr.com/65535/55104300919_4af4061bbe_z.jpg',
+    image: 'https://live.staticflickr.com/65535/55104300919_4af4061bbe_b.jpg',
+    label: 'DSC05285',
+    category: 'Baby Shoots'
+  });
+
+
   // Re-render if needed
   const activeCategoryBtn = document.querySelector('.gallery-filter button.active');
   const activeCategory = activeCategoryBtn ? activeCategoryBtn.dataset.category : 'All';
